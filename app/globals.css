@@ -1,6 +1,67 @@
 @import "tailwindcss";
 
+@theme {
+  --color-luxury-gold: #B5A48B;
+  --color-luxury-dark: #1A1A1A;
+  --color-luxury-cream: #F9F8F6;
+  
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+}
+
 :root {
+  background-color: var(--color-luxury-cream);
+  color: var(--color-luxury-dark);
+}
+
+/* Efecto de suavizado para el scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Personalización del icono del datepicker nativo */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* Para que el texto no se vea gris en algunos navegadores */
+input[type="date"] {
+  position: relative;
+  min-height: 1.5rem;
+}
+
+@layer base {
+  /* Eliminar el icono nativo de la hora y expandir su área de clic */
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    color: transparent;
+  }
+
+  /* Ajuste para Firefox */
+  input[type="time"] {
+    position: relative;
+    -moz-appearance: textfield;
+  }
+}
+
+/* :root {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -23,4 +84,4 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-}
+} */

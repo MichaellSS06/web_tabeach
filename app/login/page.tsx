@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion";
 import OAuthButtons from "@/components/OAuthButtons"
 import Link from "next/link"
+import { useSearchParams } from 'next/navigation'
 
 const schema = z.object({
   email: z.email("Correo inválido"),
@@ -16,6 +17,7 @@ const schema = z.object({
 })
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -39,9 +41,17 @@ export default function LoginPage() {
 
       if (loginError) throw loginError
 
-      router.push("/")
+      // 2. Recuperar el parámetro "next". Si no existe, usar la raíz "/"
+      const nextRoute = searchParams.get('next') || "/"
+
+      // 3. Redirigir al destino dinámico correspondiente
+      router.push(nextRoute)
+
     } catch (err: unknown) {
-      setError((err as Error).message)
+      setError(
+        //(err as Error).message
+        "Credenciales incorrectas o problema de conexión."
+      )
     } finally {
       setLoading(false)
     }

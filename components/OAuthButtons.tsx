@@ -3,6 +3,7 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { Provider } from '@supabase/supabase-js'
 import { motion } from "framer-motion"
+import { useSearchParams } from 'next/navigation'
 
 const providers = [
   { name: "Google", provider: "google", icon: "/google-icon.svg" },
@@ -13,11 +14,23 @@ export default function OAuthButtons() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+  const searchParams = useSearchParams()
+
   const handleOAuthLogin = async (provider: string) => {
+    // 1. Capturar el destino final desde la URL actual (?next=/reservar?vehiculo=...)
+    const nextRoute = searchParams.get('next') || '/'
+
+    // 2. Construir la URL de callback de tu aplicación de Next.js
+    // Recomiendo usar una ruta dedicada a procesar el intercambio de tokens de Supabase
+    const origin = window.location.origin
+
+    // Unimos el callback oficial con el destino final codificado
+    const redirectToUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextRoute)}`
+
     await supabase.auth.signInWithOAuth({
       provider: provider as Provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectToUrl,
       },
     })
   }
@@ -25,7 +38,7 @@ export default function OAuthButtons() {
   const buttonVariants = {
     initial: { scale: 1, boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)" },
     hover: { 
-      scale: 1.02, 
+      scale: 1.2, 
       boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
       transition: { duration: 0.2 }
     },

@@ -3,8 +3,10 @@
 import { useEffect } from "react"
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from "next/navigation"
+import { useSearchParams } from 'next/navigation'
 
 export default function AuthCallback() {
+  const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +23,11 @@ export default function AuthCallback() {
         return
       }
       if (session?.user) {
-        router.push("/")
+        // 2. Recuperar el parámetro "next". Si no existe, usar la raíz "/"
+        const nextRoute = searchParams.get('next') || "/"
+
+        // 3. Redirigir al destino dinámico correspondiente
+        router.push(nextRoute)
       } else {
         router.push("/login")
       }

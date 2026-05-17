@@ -323,6 +323,17 @@ export default function FormularioReserva() {
                   Proceder al Pago
                 </>
               )}
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin text-luxury-gold" />
+                  Conectando pasarela...
+                </>
+              ) : (
+                <>
+                  <CreditCard size={16} />
+                  Proceder al Pago
+                </>
+              )}
             </button>
             <div className="flex items-center justify-center gap-2 text-[9px] text-gray-400 uppercase tracking-widest">
               <ShieldCheck size={12} />

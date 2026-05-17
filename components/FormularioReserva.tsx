@@ -2,14 +2,31 @@
 
 import React, { useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { MapPin, CreditCard, ShieldCheck } from 'lucide-react'
+import { MapPin, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function FormularioReserva() {
   const searchParams = useSearchParams()
-  const vehiculo = searchParams.get('vehiculo') || "Sedán Premium"
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+  const vehiculoQuery = searchParams.get('vehiculo') || "Auto"
+  const vehiculo = useMemo(() => {
+    if (vehiculoQuery.toLowerCase().includes("custer")) return "Custer"
+    if (vehiculoQuery.toLowerCase().includes("minibus")) return "Minibus"
+    if (vehiculoQuery.toLowerCase().includes("omnibus")) return "Omnibus"
+    if (vehiculoQuery.toLowerCase().includes("sprinter")) return "Sprinter"
+    if (vehiculoQuery.toLowerCase().includes("van")) return "Van"
+    return "Auto"
+  }, [vehiculoQuery])
   
   const [origen, setOrigen] = useState("")
   const [destino, setDestino] = useState("")
+  const [fecha, setFecha] = useState("")
+  const [hora, setHora] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const precio = useMemo(() => {
     if (origen.length > 3 && destino.length > 3) {
@@ -19,6 +36,53 @@ export default function FormularioReserva() {
     }
     return null
   }, [origen, destino, vehiculo])
+
+  const handlePago = async () => {
+    if (!precio || !fecha || !hora) {
+      setError("Por favor, complete todos los campos de trayecto, fecha y hora.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    const datosCompraSimulados = {
+      nombre: "Cliente Premium Tabeach",
+      email: "cliente.test@tabeach.com",
+      phone: 999999999,
+      pasajeros: 2,
+      vehiculo: vehiculo, 
+      origen: origen,     
+      destino: destino,   
+      fecha: fecha,
+      hora: `${hora}:00`, 
+      tour: null,
+      zonaHotel: null        
+    }
+
+    try {
+      // 2. REEMPLAZO DEL FETCH POR EL METODO NATIVO
+      const { data, error: invokeError } = await supabase.functions.invoke('openpay-checkout', {
+        body: datosCompraSimulados // No necesita JSON.stringify, se pasa el objeto directo
+      })
+
+      // El cliente de Supabase maneja los errores de red o de función en el objeto error
+      if (invokeError) {
+        throw new Error(invokeError.message || 'Error al invocar la función de pago.')
+      }
+
+      // 3. REDIRECCIÓN A OPENPAY CON LA DATA EN LÍMPIA
+      if (data && data.checkout_url) {
+        window.location.href = data.checkout_url
+      } else {
+        throw new Error('No se recibió la URL de la pasarela de pagos.')
+      }
+
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Error de conexión con el servidor.')
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-luxury-cream pt-32 pb-20 px-6 font-sans">
@@ -31,6 +95,12 @@ export default function FormularioReserva() {
           </div>
 
           <div className="p-8 space-y-6">
+            {/* Mensaje de error visual si la pasarela falla */}
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 text-xs uppercase tracking-wider font-bold rounded-sm">
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-6">
               <div className="relative group">
                 <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Origen</label>
@@ -64,11 +134,19 @@ export default function FormularioReserva() {
             <div className="grid grid-cols-2 gap-6">
               <div className="border-b border-gray-100 pb-2">
                 <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Fecha</label>
-                <input type="date" className="bg-transparent outline-none w-full text-sm [color-scheme:light]" />
+                <input 
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  type="date" 
+                  className="bg-transparent outline-none w-full text-sm [color-scheme:light]" />
               </div>
               <div className="border-b border-gray-100 pb-2">
                 <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Hora</label>
-                <input type="time" className="bg-transparent outline-none w-full text-sm" />
+                <input 
+                  value={hora}
+                  onChange={(e) => setHora(e.target.value)}
+                  type="time" 
+                  className="bg-transparent outline-none w-full text-sm" />
               </div>
             </div>
           </div>
@@ -97,15 +175,25 @@ export default function FormularioReserva() {
 
           <div className="mt-8 space-y-4">
             <button 
-              disabled={!precio}
+              onClick={handlePago}
+              disabled={!precio || !fecha || !hora || loading}
               className={`w-full py-4 flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest transition-all duration-500 ${
                 precio 
                 ? "bg-luxury-gold text-white hover:bg-luxury-dark cursor-pointer" 
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
-              <CreditCard size={16} />
-              Proceder al Pago
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin text-luxury-gold" />
+                  Conectando pasarela...
+                </>
+              ) : (
+                <>
+                  <CreditCard size={16} />
+                  Proceder al Pago
+                </>
+              )}
             </button>
             <div className="flex items-center justify-center gap-2 text-[9px] text-gray-400 uppercase tracking-widest">
               <ShieldCheck size={12} />

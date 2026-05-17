@@ -2,14 +2,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SearchFilters from './SearchFilters';
 import SearchResults from './SearchResults';
+import Image from 'next/image';
+import { useBookingStore, RutaTraslado } from '@/store/useBookingStore';
 
-export default function HeroSection() {
+interface HeroProps {
+  initialFlota: RutaTraslado[];
+}
+
+export default function HeroSection({ initialFlota }: HeroProps) {
   const [busquedaRealizada, setBusquedaRealizada] = useState(false);
-  const [filtros, setFiltros] = useState({ origen: '', destino: '', pasajeros: '1-3 Pasajeros' });
+  const [filtros, setFiltros] = useState({ origen: '', destino: '', fecha: '' });
   const resultsRef = useRef<HTMLDivElement>(null);
+  const setFlotaCompleta = useBookingStore((state) => state.setFlotaCompleta);
 
-// Clave dinámica para forzar la destrucción y recreación del componente de filtros si falla
-  const [remountKey, setRemountKey] = useState(0);
+  // Sincronizar data del servidor a Zustand
+  useEffect(() => {
+    if (initialFlota.length > 0) {
+      setFlotaCompleta(initialFlota);
+    }
+  }, [initialFlota, setFlotaCompleta]);
 
   useEffect(() => {
     // 1. Estrategia por API de Rendimiento (Detecta retroceso de forma nativa)
@@ -34,7 +45,7 @@ export default function HeroSection() {
     return () => document.removeEventListener('visibilitychange', limpiarEstadoAlVolver);
   }, []);
   
-  const handleSearch = (data: { origen: string, destino: string, pasajeros: string }) => {
+  const handleSearch = (data: { origen: string, destino: string, pasajeros?: number | string | null, fecha: string }) => {
     setFiltros(data);
     setBusquedaRealizada(true);
 
@@ -49,10 +60,12 @@ export default function HeroSection() {
       {/* SECCIÓN HERO */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=2070" 
-            alt="Fondo Turístico" 
-            className="w-full h-full object-cover brightness-[0.6]"
+            alt="Transporte Turístico de Lujo Tabeach" 
+            fill
+            priority
+            className="object-cover brightness-[0.6]"
           />
         </div>
         
@@ -65,7 +78,7 @@ export default function HeroSection() {
             Descubre la ciudad con el servicio de transporte más exclusivo y puntual.
           </p>
 
-          <SearchFilters key={remountKey} onSearch={handleSearch} />
+          <SearchFilters onSearch={handleSearch} />
           
         </div>
       </section>

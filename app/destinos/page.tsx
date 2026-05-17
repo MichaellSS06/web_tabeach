@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import DestinosList from '@/components/DestinosList';
 
 export default function DestinosPage() {
@@ -6,10 +7,12 @@ export default function DestinosPage() {
       {/* Hero de Destinos */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073" 
             className="w-full h-full object-cover brightness-50"
-            alt="Destinos Tabeach"
+            alt="Destinos Turísticos Exclusivos Tabeach"
+            fill
+            priority
           />
         </div>
         <div className="relative z-10 text-center text-white px-4">

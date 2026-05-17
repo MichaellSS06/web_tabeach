@@ -24,8 +24,46 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Tabeach | Transporte Turístico VIP",
-  description: "Servicios de transporte de lujo y tours personalizados.",
+  title: {
+    default: "Tabeach | Transporte Turístico VIP",
+    template: "%s | Tabeach"
+  },
+  description: "Servicios de transporte de lujo y tours personalizados en los destinos más exclusivos. Confort, puntualidad y discreción garantizados.",
+  keywords: ["transporte turístico", "traslados VIP", "tours personalizados", "transporte de lujo", "Tabeach"],
+  authors: [{ name: "Tabeach" }],
+  creator: "Tabeach",
+  publisher: "Tabeach",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_PE",
+    url: "https://tabeach.com", // Reemplazar con la URL real si es diferente
+    siteName: "Tabeach",
+    title: "Tabeach | Transporte Turístico VIP",
+    description: "Servicios de transporte de lujo y tours personalizados. La mejor experiencia de viaje.",
+    images: [
+      {
+        url: "/og-image.jpg", // Asegurarse de que esta imagen exista en public/
+        width: 1200,
+        height: 630,
+        alt: "Tabeach Transporte Turístico VIP",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tabeach | Transporte Turístico VIP",
+    description: "Servicios de transporte de lujo y tours personalizados.",
+    images: ["/og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

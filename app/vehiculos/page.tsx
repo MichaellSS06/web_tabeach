@@ -1,4 +1,5 @@
-import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { 
   Users, 
   Briefcase, 
@@ -89,10 +90,12 @@ export default function VehiculosPage() {
       {/* --- HERO DE LA SECCIÓN --- */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070" 
             className="w-full h-full object-cover brightness-[0.5]"
-            alt="Flota de lujo"
+            alt="Flota de transporte de lujo Tabeach"
+            fill
+            priority
           />
         </div>
         <div className="relative z-10 text-center text-white px-4">
@@ -111,11 +114,12 @@ export default function VehiculosPage() {
             className={`flex flex-col md:flex-row gap-12 items-center ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}
           >
             {/* Imagen a la Izquierda (con efecto hover) */}
-            <div className="w-full md:w-1/2 overflow-hidden shadow-2xl rounded-sm group">
-              <img 
+            <div className="w-full md:w-1/2 overflow-hidden shadow-2xl rounded-sm group relative h-[400px]">
+              <Image 
                 src={car.image} 
-                alt={car.name} 
-                className="w-full h-[400px] object-cover transition-transform duration-1000 group-hover:scale-105"
+                alt={`${car.name} - ${car.type} Tabeach`} 
+                fill
+                className="object-cover transition-transform duration-1000 group-hover:scale-105"
               />
             </div>
 
@@ -159,13 +163,13 @@ export default function VehiculosPage() {
                     <span className="text-xl font-medium text-luxury-dark italic">Bajo solicitud</span>
                 </div>
                 
-                <a 
+                <Link 
                     href={`/reservar?vehiculo=${encodeURIComponent(car.param)}`}
                     className="bg-luxury-dark text-white px-8 py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-luxury-gold transition-colors flex items-center group"
                 >
                     Cotizar Viaje
                     <ChevronRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </a>
+                </Link>
                 </div>
             </div>
           </div>

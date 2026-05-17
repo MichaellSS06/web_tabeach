@@ -1,6 +1,6 @@
-import React from 'react';
-import { Shield, Clock, Compass, Award, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { Shield, Clock, Compass, Award, ChevronRight } from 'lucide-react';
 
 export default function NosotrosPage() {
   return (
@@ -9,10 +9,12 @@ export default function NosotrosPage() {
       {/* --- HERO SECTION --- */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=2070" 
             className="w-full h-full object-cover brightness-50 animate-in fade-in duration-1000"
-            alt="Experiencia premium Tabeach"
+            alt="Experiencia premium Tabeach - Transporte VIP"
+            fill
+            priority
           />
         </div>
         <div className="relative z-10 text-center text-white px-4">

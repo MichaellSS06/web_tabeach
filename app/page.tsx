@@ -1,40 +1,47 @@
-import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Star, 
   ChevronRight, 
   Instagram, 
   Facebook, 
   Twitter, 
   Mail,
-  Search
 } from 'lucide-react';
 import HeroSection from '@/components/Hero';
 import ReservarButton from '@/components/ReservarButton';
+import { supabase } from '@/lib/supabase';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { data: rutasTraslados, error } = await supabase
+    .from('rutas_traslados')
+    .select('*');
+   
+  if (error) {
+    console.error("Error cargando rutas_traslados de Supabase:", error.message);
+  }
+
   return (
     <div className="min-h-screen font-sans">
       {/* --- NAVEGACIÓN --- */}
       <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-        <div className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
+        <Link href="/" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
           Tabeach <span className="text-luxury-gold">.</span>
-        </div>
+        </Link>
         
         <div className="hidden md:flex space-x-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
-          <a href="/destinos" className="hover:text-luxury-gold transition">Tours</a>
-          <a href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</a>
-          {/* <a href="#" className="hover:text-luxury-gold transition">Servicios</a> */}
-          <a href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</a>
+          <Link href="/destinos" className="hover:text-luxury-gold transition">Tours</Link>
+          <Link href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</Link>
+          <Link href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</Link>
         </div>
 
         <ReservarButton />
       </nav>
 
       {/* --- SECCIÓN HERO --- */}
-      <HeroSection />
+      <section>
+        <h1 className="sr-only">Tabeach | Transporte Turístico VIP y Tours Personalizados</h1>
+        <HeroSection initialFlota={rutasTraslados || []}/>
+      </section>
 
       {/* --- SERVICIOS (Grid Estético) --- */}
       <section className="py-24 px-8 max-w-7xl mx-auto">
@@ -43,9 +50,9 @@ export default function HomePage() {
             <h2 className="text-luxury-gold font-bold uppercase tracking-[0.3em] text-xs mb-3">Nuestra Flota</h2>
             <p className="text-4xl md:text-5xl font-serif italic text-luxury-dark">Elige tu experiencia</p>
           </div>
-          <button className="mt-6 md:mt-0 text-[11px] font-bold uppercase tracking-widest border-b-2 border-luxury-gold pb-1">
+          <Link href="/vehiculos" className="mt-6 md:mt-0 text-[11px] font-bold uppercase tracking-widest border-b-2 border-luxury-gold pb-1">
             Ver todos los vehículos
-          </button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -56,20 +63,25 @@ export default function HomePage() {
           ].map((item) => (
             <div key={item.id} className="group cursor-pointer">
               <div className="relative overflow-hidden aspect-[3/4] mb-6 shadow-xl">
-                <img src={item.img} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Image 
+                  src={item.img} 
+                  alt={`Servicio de ${item.name} - Tabeach`} 
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                />
                 <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md text-white px-3 py-1 text-xs font-bold">
                   {item.id}
                 </div>
               </div>
               <h3 className="text-xl font-bold uppercase tracking-tighter mb-2">{item.name}</h3>
               <p className="text-gray-500 text-sm leading-relaxed mb-4">{item.desc}</p>
-              <a 
+              <Link 
                 href={item.enlace} 
                 className="inline-flex items-center text-luxury-gold text-xs font-bold uppercase tracking-widest group-hover:translate-x-2 transition-transform w-fit"
               >
                 Explorar 
                 <ChevronRight size={14} className="ml-1 shrink-0" />
-              </a>
+              </Link>
             </div>
           ))}
         </div>
@@ -105,11 +117,11 @@ export default function HomePage() {
               Escríbenos de forma directa para coordinar traslados privados especiales.
             </p>
             <a 
-              href="mailto:informes@tabeach.com?subject=Consulta%20Servicio%20Premium%20Tabeach"
+              href="mailto:tabeach185@gmail.com?subject=Consulta%20Servicio%20Premium%20Tabeach"
               className="flex items-center justify-between border-b border-gray-700 pb-2 group hover:border-luxury-gold transition-colors"
             >
               <span className="text-sm text-gray-400 group-hover:text-white transition-colors font-light">
-                informes@tabeach.com
+                tabeach185@gmail.com
               </span>
               <Mail size={16} className="text-luxury-gold group-hover:translate-x-1 transition-transform" />
             </a>

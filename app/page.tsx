@@ -12,6 +12,7 @@ import {
   Search
 } from 'lucide-react';
 import HeroSection from '@/components/Hero';
+import ReservarButton from '@/components/ReservarButton';
 
 export default function HomePage() {
   return (
@@ -23,15 +24,13 @@ export default function HomePage() {
         </div>
         
         <div className="hidden md:flex space-x-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
-          <a href="#" className="hover:text-luxury-gold transition">Destinos</a>
-          <a href="#" className="hover:text-luxury-gold transition">Vehículos</a>
-          <a href="#" className="hover:text-luxury-gold transition">Servicios</a>
-          <a href="#" className="hover:text-luxury-gold transition">Nosotros</a>
+          <a href="/destinos" className="hover:text-luxury-gold transition">Tours</a>
+          <a href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</a>
+          {/* <a href="#" className="hover:text-luxury-gold transition">Servicios</a> */}
+          <a href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</a>
         </div>
 
-        <button className="bg-luxury-dark text-white px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest hover:bg-luxury-gold transition-colors duration-300">
-          Reservar Ahora
-        </button>
+        <ReservarButton />
       </nav>
 
       {/* --- SECCIÓN HERO --- */}
@@ -51,9 +50,9 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {[
-            { id: '01', name: 'Chofer Privado', desc: 'Servicio premium de punto a punto.', img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800' },
-            { id: '02', name: 'Tours Guiados', desc: 'Conoce la historia local con expertos.', img: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800' },
-            { id: '03', name: 'Vans Ejecutivas', desc: 'Confort absoluto para grupos VIP.', img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800' }
+            { id: '01', name: 'Chofer Privado', desc: 'Servicio premium de punto a punto.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800' },
+            { id: '02', name: 'Tours Guiados', desc: 'Conoce la historia local con expertos.', enlace: "/destinos", img: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800' },
+            { id: '03', name: 'Vans Ejecutivas', desc: 'Confort absoluto para grupos VIP.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800' }
           ].map((item) => (
             <div key={item.id} className="group cursor-pointer">
               <div className="relative overflow-hidden aspect-[3/4] mb-6 shadow-xl">
@@ -64,9 +63,13 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold uppercase tracking-tighter mb-2">{item.name}</h3>
               <p className="text-gray-500 text-sm leading-relaxed mb-4">{item.desc}</p>
-              <div className="flex items-center text-luxury-gold text-xs font-bold uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                Explorar <ChevronRight size={14} className="ml-1" />
-              </div>
+              <a 
+                href={item.enlace} 
+                className="inline-flex items-center text-luxury-gold text-xs font-bold uppercase tracking-widest group-hover:translate-x-2 transition-transform w-fit"
+              >
+                Explorar 
+                <ChevronRight size={14} className="ml-1 shrink-0" />
+              </a>
             </div>
           ))}
         </div>
@@ -97,11 +100,19 @@ export default function HomePage() {
           </div>
 
           <div>
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-8 text-luxury-gold">Newsletter</h4>
-            <div className="flex border-b border-gray-700 pb-2">
-              <input type="email" placeholder="Tu correo electrónico" className="bg-transparent outline-none text-sm w-full" />
-              <button><Mail size={16} className="text-luxury-gold" /></button>
-            </div>
+            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-8 text-luxury-gold">¿Consultas a la medida?</h4>
+            <p className="text-gray-400 text-xs font-light mb-4 leading-relaxed">
+              Escríbenos de forma directa para coordinar traslados privados especiales.
+            </p>
+            <a 
+              href="mailto:informes@tabeach.com?subject=Consulta%20Servicio%20Premium%20Tabeach"
+              className="flex items-center justify-between border-b border-gray-700 pb-2 group hover:border-luxury-gold transition-colors"
+            >
+              <span className="text-sm text-gray-400 group-hover:text-white transition-colors font-light">
+                informes@tabeach.com
+              </span>
+              <Mail size={16} className="text-luxury-gold group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
         </div>
         

@@ -13,32 +13,72 @@ const vehicles = [
   {
     id: 1,
     name: "Mercedes-Benz S-Class",
-    type: "Sedán de Lujo",
+    type: "Auto de Lujo",
+    param: "auto",
     image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070",
     passengers: 3,
     luggage: 2,
-    price: "95",
     features: ["Chofer privado", "Asientos de cuero", "Climatización bizona", "Agua embotellada"]
   },
   {
     id: 2,
     name: "Mercedes-Benz Sprinter",
-    type: "Executive Van",
+    type: "Avanza de Lujo",
+    param: "avanza",
     image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
     passengers: 8,
     luggage: 10,
-    price: "150",
     features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
   },
   {
     id: 3,
     name: "Tesla Model X",
-    type: "SUV Eléctrico",
+    type: "Van de Lujo",
+    param: "van",
     image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
     passengers: 4,
     luggage: 3,
-    price: "120",
     features: ["Silencio absoluto", "Techo panorámico", "Piloto automático", "Cero emisiones"]
+  },
+  {
+    id: 4,
+    name: "Mercedes-Benz S-Class",
+    type: "Sprinter de Lujo",
+    param: "sprinter",
+    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070",
+    passengers: 3,
+    luggage: 2,
+    features: ["Chofer privado", "Asientos de cuero", "Climatización bizona", "Agua embotellada"]
+  },
+  {
+    id: 5,
+    name: "Mercedes-Benz Sprinter",
+    type: "Custer de Lujo",
+    param: "custer",
+    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
+    passengers: 8,
+    luggage: 10,
+    features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
+  },
+  {
+    id: 6,
+    name: "Tesla Model X",
+    type: "Minibus de Lujo",
+    param: "minibus",
+    image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
+    passengers: 4,
+    luggage: 3,
+    features: ["Silencio absoluto", "Techo panorámico", "Piloto automático", "Cero emisiones"]
+  },
+  {
+    id: 7,
+    name: "Mercedes-Benz Sprinter",
+    type: "Omnibus de Lujo",
+    param: "omnibus",
+    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
+    passengers: 8,
+    luggage: 10,
+    features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
   }
 ];
 
@@ -120,7 +160,7 @@ export default function VehiculosPage() {
                 </div>
                 
                 <a 
-                    href={`/reservar?vehiculo=${encodeURIComponent(car.name)}`}
+                    href={`/reservar?vehiculo=${encodeURIComponent(car.param)}`}
                     className="bg-luxury-dark text-white px-8 py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-luxury-gold transition-colors flex items-center group"
                 >
                     Cotizar Viaje

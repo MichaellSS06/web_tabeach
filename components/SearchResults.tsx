@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 const VEHICULOS = [
   { id: 1, name: "Mercedes-Benz S-Class", type: "Sedán", capacity: "1-3", price: 85, img: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070" },
@@ -9,7 +10,8 @@ const VEHICULOS = [
 
 export default function SearchResults({ visible, filtros }: { visible: boolean, filtros: { origen: string, destino: string, pasajeros: string } }) {
   // Filtrar localmente
-  const filtrados = VEHICULOS.filter(v => v.capacity === filtros.pasajeros.split(' ')[0]);
+  const capacidadFiltro = filtros.pasajeros ? filtros.pasajeros.split(' ')[0] : "1-3";
+  const filtrados = VEHICULOS.filter(v => v.capacity === capacidadFiltro);
 
   return (
     <section className={`py-24 bg-luxury-cream transition-all duration-1000 ease-in-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
@@ -35,12 +37,13 @@ export default function SearchResults({ visible, filtros }: { visible: boolean, 
                   <span className="text-[10px] text-gray-400 block uppercase">Desde</span>
                   <span className="text-2xl font-bold text-luxury-dark">${auto.price}</span>
                 </div>
-                <a 
+                <Link 
                   href={`/reservar?vehiculo=${encodeURIComponent(auto.name)}&origen=${encodeURIComponent(filtros.origen)}&destino=${encodeURIComponent(filtros.destino)}`}
-                  className="bg-luxury-dark text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-luxury-gold transition-colors flex items-center group"
+                  className="bg-luxury-dark text-white px-8 py-4 text-[10px] font-bold uppercase tracking-widest hover:bg-luxury-gold transition-colors flex items-center group whitespace-nowrap"
                 >
-                  Reservar <ChevronRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </a>
+                  Reservar 
+                  <ChevronRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             </div>
           ))}

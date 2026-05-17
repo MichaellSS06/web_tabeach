@@ -1,0 +1,2 @@
+http://localhost:3000/reservar?vehiculo=auto&zonaHotel=Punta%20Mero/Punta%20Sal&tour=Tour%20de%20Manglares&pasajeros=3
+http://localhost:3000/reservar?vehiculo=auto&origen=Aeropuerto%20Tumbes&destino=Acapulco&pasajeros=3

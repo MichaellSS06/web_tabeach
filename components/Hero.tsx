@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import SearchFilters from './SearchFilters';
 import SearchResults from './SearchResults';
 
@@ -8,6 +8,32 @@ export default function HeroSection() {
   const [filtros, setFiltros] = useState({ origen: '', destino: '', pasajeros: '1-3 Pasajeros' });
   const resultsRef = useRef<HTMLDivElement>(null);
 
+// Clave dinámica para forzar la destrucción y recreación del componente de filtros si falla
+  const [remountKey, setRemountKey] = useState(0);
+
+  useEffect(() => {
+    // 1. Estrategia por API de Rendimiento (Detecta retroceso de forma nativa)
+    const entries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    
+    if (entries.length > 0 && entries[0].type === 'back_forward') {
+      // No actualices estados aquí. Al recargar la página, React nacerá con sus valores por defecto (false y 0).
+      window.location.reload(); 
+    }
+
+    // 2. Plan B: Monitorear visibilidad por si Next.js congela el hilo principal al volver
+    const limpiarEstadoAlVolver = () => {
+      if (document.visibilityState === 'visible') {
+        const perfEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+        if (perfEntries[0]?.type === 'back_forward') {
+          window.location.reload();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', limpiarEstadoAlVolver);
+    return () => document.removeEventListener('visibilitychange', limpiarEstadoAlVolver);
+  }, []);
+  
   const handleSearch = (data: { origen: string, destino: string, pasajeros: string }) => {
     setFiltros(data);
     setBusquedaRealizada(true);
@@ -39,7 +65,7 @@ export default function HeroSection() {
             Descubre la ciudad con el servicio de transporte más exclusivo y puntual.
           </p>
 
-          <SearchFilters onSearch={handleSearch} />
+          <SearchFilters key={remountKey} onSearch={handleSearch} />
           
         </div>
       </section>

@@ -31,6 +31,7 @@ interface BookingState {
   tarifasMovilidad: TourMovilidadTarifa[];
 
   fetchToursAndTarifas: () => Promise<void>;
+  fetchFlota: () => Promise<void>;
 }
 
 export const useBookingStore = create<BookingState>((set) => ({
@@ -59,4 +60,15 @@ export const useBookingStore = create<BookingState>((set) => ({
       console.error('Error crítico al cargar datos en useBookingStore:', error);
     }
   },
+
+  fetchFlota: async () => {
+    try {
+      const { data, error } = await supabase.from('rutas_traslados').select('*'); // Asegúrate de que este sea el nombre real de tu tabla
+      if (error) throw error;
+      set({ flotaCompleta: data || [] });
+    } catch (error) {
+      console.error('Error al cargar la flota en useBookingStore:', error);
+    }
+  },
+  
 }));

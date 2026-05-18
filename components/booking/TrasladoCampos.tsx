@@ -31,6 +31,9 @@ export default function TrasladoCampos({
             className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           >
             <option value="">¿Dónde le recogemos?</option>
+            {origenesUnicos.length === 0 && origen && (
+              <option value={origen}>{origen}</option>
+            )}
             {origenesUnicos.map((orig) => (
               <option key={orig} value={orig}>{orig}</option>
             ))}
@@ -48,6 +51,9 @@ export default function TrasladoCampos({
             className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           >
             <option value="">¿A dónde desea ir?</option>
+            {destinosUnicos.length === 0 && destino && (
+              <option value={destino}>{destino}</option>
+            )}
             {destinosUnicos.map((dest) => (
               <option key={dest} value={dest}>{dest}</option>
             ))}

@@ -11,7 +11,10 @@ interface PageProps {
 export default async function ReservarPage({ searchParams }: PageProps) {
   const supabase = await createServerClientSupabase()
   const { data: { session } } = await supabase.auth.getSession()
-
+  const { data: { user } } = await supabase.auth.getUser()
+  const email = user?.email
+  const nombre = user?.user_metadata.full_name
+  
   if (!session) {
     // Await los parámetros ya que en versiones recientes de Next.js son promesas
     const resolvedParams = await searchParams
@@ -29,7 +32,7 @@ export default async function ReservarPage({ searchParams }: PageProps) {
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-luxury-cream text-sm text-gray-500 italic">Cargando experiencia...</div>}>
-      <FormularioReserva />
+      <FormularioReserva nombre={nombre || ""} email={email || ""} />
     </Suspense>
   )
 }

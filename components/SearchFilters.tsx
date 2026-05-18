@@ -1,10 +1,14 @@
 "use client";
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MapPin, Calendar, Users, Search } from 'lucide-react';
 import { useFlotaLocations } from '@/hooks/useFlotaLocations';
 
 interface FiltersProps {
-  onSearch: (filtros: { origen: string, destino: string, pasajeros?: number | string | null, fecha: string }) => void;
+  onSearch?: (filtros: EstadoFiltros) => void;
+  onChange: (filtros: EstadoFiltros) => void;
+  esFormVuelta: boolean;
+  sugerenciaOrigen?: string;
+  sugerenciaDestino?: string;
 }
 
 interface EstadoFiltros {
@@ -14,15 +18,43 @@ interface EstadoFiltros {
   pasajeros: number | ''; // <-- Permite que sea un número o el string vacío de "Cualquier Capacidad"
 }
 
-export default function SearchFilters({ onSearch }: FiltersProps) {
+export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugerenciaOrigen, sugerenciaDestino }: FiltersProps) {
   const { origenesUnicos, destinosUnicos } = useFlotaLocations();
 
-  const [data, setData] = React.useState<EstadoFiltros>({
-    origen: '',
-    destino: '',
+  const [data, setData] = useState<EstadoFiltros>({
+    origen: sugerenciaOrigen || '',
+    destino: sugerenciaDestino || '',
     fecha: '',
     pasajeros: ''
   });
+
+  // 2. SOLUCIÓN AL EFECTO: Sincronización limpia basada en renderizado derivado.
+  // Si las sugerencias del padre cambian (porque el usuario editó el formulario de ida),
+  // ajustamos el estado inmediatamente en la fase de renderizado actual, evitando efectos secundarios asíncronos.
+  const [prevSugerenciaOrigen, setPrevSugerenciaOrigen] = useState(sugerenciaOrigen);
+  const [prevSugerenciaDestino, setPrevSugerenciaDestino] = useState(sugerenciaDestino);
+
+  if (esFormVuelta && (sugerenciaOrigen !== prevSugerenciaOrigen || sugerenciaDestino !== prevSugerenciaDestino)) {
+    setPrevSugerenciaOrigen(sugerenciaOrigen);
+    setPrevSugerenciaDestino(sugerenciaDestino);
+    
+    const estadoActualizado = {
+      ...data,
+      origen: sugerenciaOrigen || data.origen,
+      destino: sugerenciaDestino || data.destino
+    };
+    queueMicrotask(() => {
+      setData(estadoActualizado);
+      onChange(estadoActualizado);
+    }); // Informa al padre de forma segura y controlada
+  }
+
+  // 3. Función auxiliar para actualizar localmente y notificar al padre sin usar useEffect
+  const actualizarCampo = (campo: keyof EstadoFiltros, valor: string | number) => {
+    const nuevoEstado = { ...data, [campo]: valor };
+    setData(nuevoEstado);
+    onChange(nuevoEstado); // 🚀 Sincronización directa y limpia en el hilo de ejecución del evento
+  };
 
   // 4. Obtener la fecha de hoy en formato YYYY-MM-DD para bloquear el pasado
   const hoyStr = useMemo(() => {
@@ -43,15 +75,10 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
 
   // 5. Manejador de envío seguro que inyecta los valores por defecto si el usuario no interactuó con los selects
   const handleFormSubmit = () => {
-    if (!esFormularioValido) return;
-    onSearch({
-      origen: data.origen,
-      destino: data.destino,
-      pasajeros: data.pasajeros || null,
-      fecha: data.fecha
-    });
-    console.log(data.origen, data.destino, data.pasajeros, data.fecha)
+    if (!esFormularioValido || !onSearch) return;
+    onSearch(data);
   };
+    console.log(data.origen, data.destino, data.pasajeros, data.fecha)
 
   return (
     <div className="bg-white p-2 rounded-xl md:rounded-full shadow-2xl flex flex-col md:flex-row items-center text-luxury-dark mt-12 w-full max-w-5xl">
@@ -61,7 +88,7 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
         <select 
           value={data.origen}
           className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
-          onChange={(e) => setData({...data, origen: e.target.value})}
+          onChange={(e) => actualizarCampo('origen', e.target.value)} // 👈 Corregido
         >
           <option value="" disabled>Seleccione Origen</option>
           {origenesUnicos.map((orig) => (
@@ -76,7 +103,7 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
         <select 
           value={data.destino}
           className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
-          onChange={(e) => setData({...data, destino: e.target.value})}
+          onChange={(e) => actualizarCampo('destino', e.target.value)}
         >
           <option value="" disabled>Seleccione Destino</option>
           {destinosUnicos.map((dest) => (
@@ -93,7 +120,7 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
           min={hoyStr} // Restringe la selección a hoy o fechas futuras
           value={data.fecha}
           className="bg-transparent outline-none w-full text-sm [color-scheme:light] cursor-pointer"
-          onChange={(e) => setData({...data, fecha: e.target.value})}
+          onChange={(e) => actualizarCampo('fecha', e.target.value)}
         />
       </div>
 
@@ -103,7 +130,7 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
         <select 
           value={data.pasajeros}
           className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
-          onChange={(e) => setData({...data, pasajeros: e.target.value === "" ? "" : Number(e.target.value)})}
+          onChange={(e) => actualizarCampo('pasajeros', e.target.value === "" ? "" : Number(e.target.value))}
         >
           <option value="">Cualquier Capacidad</option>
           {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => (
@@ -114,17 +141,20 @@ export default function SearchFilters({ onSearch }: FiltersProps) {
         </select>
       </div>
 
-      <button 
-        onClick={handleFormSubmit}
-        disabled={!esFormularioValido}
-        className={`p-4 rounded-full transition-all duration-300 shadow-lg ${
-          esFormularioValido 
-            ? 'bg-luxury-gold text-white hover:bg-luxury-dark active:scale-95' 
-            : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-70'
-        }`}
-      >
-        <Search size={20} />
-      </button>
+      {/* RENDERIZADO CONDICIONAL DEL BOTÓN INDIVIDUAL (Solo si no requiere flujo compuesto) */}
+      {onSearch && (
+        <button 
+          onClick={handleFormSubmit}
+          disabled={!esFormularioValido}
+          className={`p-4 rounded-full transition-all duration-300 shadow-lg shrink-0 ${
+            esFormularioValido 
+              ? 'bg-luxury-gold text-white hover:bg-luxury-dark active:scale-95' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-70'
+          }`}
+        >
+          <Search size={20} />
+        </button>
+      )}
     </div>
   );
 }

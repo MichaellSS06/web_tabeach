@@ -17,6 +17,7 @@ export interface Tour {
 
 export interface TourMovilidadTarifa {
   id: number | string;
+  tour_id: number | string;
   zona_hoteles: string;
   vehiculo_clase: string;
   precio_movilidad_rt: number;

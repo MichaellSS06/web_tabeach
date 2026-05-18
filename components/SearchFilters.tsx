@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MapPin, Calendar, Users, Search } from 'lucide-react';
-import { useBookingStore } from '@/store/useBookingStore';
+import { useFlotaLocations } from '@/hooks/useFlotaLocations';
 
 interface FiltersProps {
   onSearch: (filtros: { origen: string, destino: string, pasajeros?: number | string | null, fecha: string }) => void;
@@ -15,16 +15,7 @@ interface EstadoFiltros {
 }
 
 export default function SearchFilters({ onSearch }: FiltersProps) {
-  const flotaCompleta = useBookingStore((state) => state.flotaCompleta);
-
-  // 1. Obtener valores únicos de Origen y Destino usando useMemo para optimizar rendimiento
-  const origenesUnicos = useMemo(() => {
-    return Array.from(new Set(flotaCompleta.map(item => item.origen.trim()))).sort();
-  }, [flotaCompleta]);
-
-  const destinosUnicos = useMemo(() => {
-    return Array.from(new Set(flotaCompleta.map(item => item.destino.trim()))).sort();
-  }, [flotaCompleta]);
+  const { origenesUnicos, destinosUnicos } = useFlotaLocations();
 
   const [data, setData] = React.useState<EstadoFiltros>({
     origen: '',

@@ -8,6 +8,15 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from "next/navigation"
 import OAuthButtons from "@/components/OAuthButtons"
 import { motion } from "framer-motion";
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Registrarse",
+  robots: {
+    index: false,
+    follow: true,
+  },
+}
 
 const schema = z.object({
   email: z.email("Correo inválido"),

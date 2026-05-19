@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from "next/navigation"
 import { useSearchParams } from 'next/navigation'
+import { getSafeRedirect } from "@/lib/utils"
 
 export default function AuthCallback() {
   const searchParams = useSearchParams()
@@ -24,7 +25,8 @@ export default function AuthCallback() {
       }
       if (session?.user) {
         // 2. Recuperar el parámetro "next". Si no existe, usar la raíz "/"
-        const nextRoute = searchParams.get('next') || "/"
+        const nextParam = searchParams.get('next')
+        const nextRoute = getSafeRedirect(nextParam, "/")
 
         // 3. Redirigir al destino dinámico correspondiente
         router.push(nextRoute)

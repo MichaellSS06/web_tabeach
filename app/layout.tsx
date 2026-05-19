@@ -61,8 +61,10 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   robots: {
-    index: true,
     follow: true,
+  },
+  alternates: {
+    canonical: "https://tabeach.com",
   },
 };
 
@@ -76,6 +78,27 @@ export default function RootLayout({
       lang="es"
     >
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "TravelAgency",
+              "name": "Tabeach",
+              "description": "Servicios de transporte de lujo y tours personalizados en los destinos más exclusivos.",
+              "url": "https://tabeach.com",
+              "telephone": "+51980214169", // Reemplazar con el real
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Av. Mariscal Castilla 985",
+                "addressLocality": "Tumbes",
+                "addressCountry": "PE"
+              },
+              "image": "https://tabeach.com/og-image.jpg",
+              "priceRange": "$$"
+            })
+          }}
+        />
         {children}
       </body>
     </html>

@@ -81,11 +81,11 @@ export default function VehicleCard({ item, fecha, pasajerosCount, vueltaOrigen,
           
           <div className="text-[10px] uppercase tracking-widest text-gray-400 space-y-1 mt-1">
             <div>
-              <span className="text-luxury-gold font-bold">Ida ({pasajerosCount} Pax):</span> {item.origen} a {item.destino} ({item.vehiculo_clase})
+              <span className="text-luxury-gold font-bold">Ida ({pasajerosCount} Pax): {item.origen} a {item.destino} ({item.vehiculo_clase}) </span>
             </div>
             {vueltaOrigen && vueltaDestino && vueltaClase && (
               <div className="text-luxury-gold font-bold">
-                🔄 Vuelta ({vueltaPasajeros} Pax): {vueltaOrigen} a {vueltaDestino} ({vueltaClase})
+                Vuelta ({vueltaPasajeros} Pax): {vueltaOrigen} a {vueltaDestino} ({vueltaClase})
               </div>
             )}
           </div>
@@ -95,7 +95,7 @@ export default function VehicleCard({ item, fecha, pasajerosCount, vueltaOrigen,
       <div className="flex items-center gap-8 mt-4 md:mt-0 w-full md:w-auto justify-between">
         <div className="text-right">
           <span className="text-[10px] text-gray-400 block uppercase">
-            {vueltaOrigen ? 'Total Combinado' : 'Desde'}
+            {vueltaOrigen ? 'Desde' : 'Desde'}
           </span>
           <span className="text-2xl font-bold text-luxury-dark">
             {precioPvt > 0 ? `$${precioPvt}` : <span className="text-sm font-sans font-light text-gray-300">No disponible</span>}

@@ -7,86 +7,97 @@ import {
   Coffee, 
   Wifi, 
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 
 const vehicles = [
   {
     id: 1,
-    name: "Mercedes-Benz S-Class",
-    type: "Auto de Lujo",
+    name: "Toyota Corolla",
+    type: "Auto",
     param: "auto",
     image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070",
     passengers: 3,
-    luggage: 2,
-    features: ["Chofer privado", "Asientos de cuero", "Climatización bizona", "Agua embotellada"]
+    luggage: 3,
+    features: ["Aire acondicionado / Calefacción", "Botella de agua por pasajero", "Maletero exclusivo", "Conductor profesional"]
   },
   {
     id: 2,
-    name: "Mercedes-Benz Sprinter",
-    type: "Avanza de Lujo",
+    name: "Suzuki Ertiga / Avanza",
+    type: "Avanza",
     param: "avanza",
     image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-    passengers: 8,
-    luggage: 10,
-    features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
+    passengers: 5,
+    luggage: 4,
+    features: ["Unidad ideal para familias", "Aire acondicionado centralizado", "Asientos reclinables", "Botella de agua por pasajero"]
   },
   {
     id: 3,
-    name: "Tesla Model X",
-    type: "Van de Lujo",
+    name: "Hyundai H-1",
+    type: "Van",
     param: "van",
     image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
-    passengers: 4,
-    luggage: 3,
-    features: ["Silencio absoluto", "Techo panorámico", "Piloto automático", "Cero emisiones"]
+    passengers: 7,
+    luggage: 7,
+    features: ["Equipaje protegido en parte posterior", "Aire acondicionado / Calefacción", "Amplio espacio interior", "Botella de agua por pasajero"]
   },
   {
     id: 4,
-    name: "Mercedes-Benz S-Class",
-    type: "Sprinter de Lujo",
+    name: "Jac Sunray",
+    type: "Sprinter",
     param: "sprinter",
     image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070",
-    passengers: 3,
-    luggage: 2,
-    features: ["Chofer privado", "Asientos de cuero", "Climatización bizona", "Agua embotellada"]
+    passengers: 12,
+    luggage: 10,
+    features: ["Estiba posterior interna segura", "Climatización de alto rendimiento", "Ideal para grupos y tours corporativos", "Botella de agua por pasajero"]
   },
   {
     id: 5,
-    name: "Mercedes-Benz Sprinter",
-    type: "Custer de Lujo",
-    param: "custer",
+    name: "Toyota Coaster",
+    type: "Custer",
+    param: "minibus",
     image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-    passengers: 8,
-    luggage: 10,
-    features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
+    passengers: 18,
+    luggage: 15,
+    features: ["Unidad de mediana capacidad", "Perfecto para rutas interprovinciales", "Asientos confort", "Aire acondicionado / Calefacción"]
   },
   {
     id: 6,
-    name: "Tesla Model X",
-    type: "Minibus de Lujo",
+    name: "Mercedes-Benz Minibús",
+    type: "Minibús",
     param: "minibus",
     image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
-    passengers: 4,
-    luggage: 3,
-    features: ["Silencio absoluto", "Techo panorámico", "Piloto automático", "Cero emisiones"]
+    passengers: 25,
+    luggage: 25,
+    features: ["Reserva con 7 días de anticipación", "Capacidad ejecutiva y delegaciones", "Gran maletero integrado", "Climatización total de cabina"]
   },
   {
     id: 7,
-    name: "Mercedes-Benz Sprinter",
-    type: "Omnibus de Lujo",
+    name: "Mercedes-Benz Ómnibus",
+    type: "Ómnibus",
     param: "omnibus",
     image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-    passengers: 8,
-    luggage: 10,
-    features: ["Wifi Premium", "Punto de carga USB", "Cristales tintados", "Espacio para esquís/golf"]
+    passengers: 40,
+    luggage: 40,
+    features: ["Máxima capacidad para eventos y turismo", "Bodegas laterales panorámicas", "Reserva previa sujeta a disponibilidad", "Conducción de larga distancia certificada"]
   }
 ];
 
 export default function VehiculosPage() {
   return (
     <div className="min-h-screen bg-luxury-cream font-sans">
-      
+      {/* --- BOTÓN PARA VOLVER AL ORIGEN (Flotante Minimalista) --- */}
+      <div className="absolute top-6 left-6 z-20">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white border border-white/20 px-4 py-2.5 text-[10px] uppercase font-bold tracking-widest rounded-sm hover:bg-white hover:text-luxury-dark hover:border-transparent transition-all duration-500 group shadow-lg"
+        >
+          <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+          Volver al inicio
+        </Link>
+      </div>
+
       {/* --- HERO DE LA SECCIÓN --- */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">

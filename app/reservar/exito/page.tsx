@@ -47,17 +47,17 @@ export default function SuccessPage() {
           </Link>
           
           <Link 
-            href="/mis-viajes" // Ajusta esta ruta según la estructura de tu app si tienes panel de usuario
+            href="/terminos-condiciones" // Ajusta esta ruta según la estructura de tu app si tienes panel de usuario
             className="w-full sm:w-auto px-8 py-4 bg-transparent border border-gray-200 text-luxury-dark text-[10px] font-bold uppercase tracking-widest hover:border-luxury-gold hover:text-luxury-gold transition-all duration-300 text-center cursor-pointer"
           >
-            Gestionar mis reservas
+            Terminos y Condiciones
           </Link>
         </div>
 
         {/* Nota de soporte al pie */}
         <p className="text-[11px] text-gray-400 mt-12 italic">
           ¿Tienes alguna duda de último minuto?{" "}
-          <Link href="/contacto" className="text-luxury-dark hover:text-luxury-gold font-bold not-italic underline underline-offset-4 ml-1 transition-colors">
+          <Link href="/nosotros" className="text-luxury-dark hover:text-luxury-gold font-bold not-italic underline underline-offset-4 ml-1 transition-colors">
             Contáctanos
           </Link>
         </p>

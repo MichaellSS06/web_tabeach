@@ -203,6 +203,15 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
     }
   }
 
+  // 4. Obtener la fecha de hoy en formato YYYY-MM-DD para bloquear el pasado
+  const hoyStr = useMemo(() => {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
   return (
     <div className="min-h-screen bg-luxury-cream pt-32 pb-20 px-6 font-sans">
       <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -277,7 +286,15 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
                       <option value="+51">PE (+51)</option>
                       <option value="+1">US (+1)</option>
                       <option value="+34">ES (+34)</option>
-                      <option value="+56">CL (+56)</option>
+                      <option value="+56">CH (+56)</option>
+                      <option value="+52">MX (+52)</option>
+                      <option value="+54">AR (+54)</option>
+                      <option value="+55">BR (+55)</option>
+                      <option value="+81">JP (+81)</option>
+                      <option value="+57">CO (+57)</option>
+                      <option value="+593">EC (+593)</option>
+                      <option value="+58">VE (+58)</option>
+                      <option value="+591">BO (+591)</option>
                     </select>
                     <span className="text-gray-300 mr-2">|</span>
                     <input 
@@ -294,7 +311,7 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="border-b border-gray-100 pb-2 group focus-within:border-luxury-gold transition-colors">
                   <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Fecha de Ida</label>
-                  <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date" className="bg-transparent outline-none w-full text-sm text-luxury-dark [color-scheme:light]" />
+                  <input value={fecha} min={hoyStr} onChange={(e) => setFecha(e.target.value)} type="date" className="bg-transparent outline-none w-full text-sm text-luxury-dark [color-scheme:light]" />
                 </div>
                 <div className="border-b border-gray-100 pb-2 group focus-within:border-luxury-gold transition-colors">
                   <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Hora de Ida</label>
@@ -354,7 +371,7 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
                 <div className="grid grid-cols-2 gap-6 mb-6">
                   <div className="border-b border-gray-100 pb-2 group focus-within:border-luxury-gold transition-colors">
                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Fecha de Vuelta</label>
-                    <input value={fechaVuelta} min={fecha} onChange={(e) => setFechaVuelta(e.target.value)} type="date" className="bg-transparent outline-none w-full text-sm text-luxury-dark [color-scheme:light]" />
+                    <input value={fechaVuelta < fecha ? fecha : fechaVuelta} min={fecha} onChange={(e) => setFechaVuelta(e.target.value)} type="date" className="bg-transparent outline-none w-full text-sm text-luxury-dark [color-scheme:light]" />
                   </div>
                   <div className="border-b border-gray-100 pb-2 group focus-within:border-luxury-gold transition-colors">
                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-2 block">Hora de Vuelta</label>

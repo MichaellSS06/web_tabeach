@@ -26,19 +26,33 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen font-sans">
+      
       {/* --- NAVEGACIÓN --- */}
-      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
-          Tabeach <span className="text-luxury-gold">.</span>
-        </Link>
+      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0">
         
-        <div className="hidden md:flex space-x-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
+        {/* Fila superior en celular (Logo y Botón alineados perfectamente en los extremos) */}
+        <div className="w-full md:w-auto flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
+            Tabeach <span className="text-luxury-gold">.</span>
+          </Link>
+          
+          {/* Este contenedor solo empuja el botón en móvil, en PC se integra al flujo */}
+          <div className="md:hidden">
+            <ReservarButton />
+          </div>
+        </div>
+        
+        {/* Enlaces de Navegación: Abajo en celular (centrados), en línea para computadora */}
+        <div className="flex justify-center md:justify-start space-x-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
           <Link href="/destinos" className="hover:text-luxury-gold transition">Tours</Link>
           <Link href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</Link>
           <Link href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</Link>
         </div>
 
-        <ReservarButton />
+        {/* Botón original para Computadora (Oculto en celular para que no se duplique) */}
+        <div className="hidden md:block">
+          <ReservarButton />
+        </div>
       </nav>
 
       {/* --- SECCIÓN HERO --- */}

@@ -78,7 +78,7 @@ export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugere
     if (!esFormularioValido || !onSearch) return;
     onSearch(data);
   };
-    console.log(data.origen, data.destino, data.pasajeros, data.fecha)
+    //console.log(data.origen, data.destino, data.pasajeros, data.fecha)
 
   return (
     <div className="bg-white p-2 rounded-xl md:rounded-full shadow-2xl flex flex-col md:flex-row items-center text-luxury-dark mt-12 w-full max-w-5xl">

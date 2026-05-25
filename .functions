@@ -1,0 +1,1127 @@
+//openpay-checkout
+// import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+// const URL_FRONTEND = Deno.env.get('URL_FRONTEND')
+// // Configuración de las cabeceras CORS para permitir peticiones desde tu Frontend
+// const corsHeaders = {
+//   'Access-Control-Allow-Origin': '*',
+//   'Access-Control-Allow-Headers': '*',
+//   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// }
+
+// serve(async (req) => {
+//   // Manejo del pre-flight request de CORS
+//   if (req.method === 'OPTIONS') {
+//     return new Response('ok', { headers: corsHeaders })
+//   }
+
+//   try {
+//     // 1. Inicializar Clientes de Supabase con la firma del sistema (Service Role)
+//     // Usamos service_role para tener permisos de lectura de tarifas de forma interna y segura
+//     const supabaseAdmin = createClient(
+//       Deno.env.get('SUPABASE_URL') ?? '',
+//       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+//     )
+
+//     // 2. Extraer parámetros enviados por el Frontend
+//     const { 
+//       nombre, email, phone, fecha, hora, pasajeros, vehiculo, origen, destino, numeroVuelo, tour, zonaHotel,
+//       vueltaActiva, origenVuelta, destinoVuelta, pasajerosVuelta, fechaVuelta, horaVuelta, numeroVueloVuelta
+//     } = await req.json()
+
+//     // Validación básica de campos requeridos
+//     if (!nombre || !email || !pasajeros || !vehiculo || !fecha || !hora) {
+//       throw new Error("Faltan campos obligatorios para procesar la reserva.")
+//     }
+
+//     let precioCalculado = 0
+//     let claseVehiculoVuelta = null
+
+//     // 1. DETERMINAR LA CLASE DE VEHÍCULO PARA LA VUELTA SEGÚN PASAJEROS
+//     if (!tour && vueltaActiva) {
+//       const pVuelta = pasajerosVuelta || pasajeros;
+//       if (pVuelta <= 3) claseVehiculoVuelta = 'Auto';
+//       else if (pVuelta <= 5) claseVehiculoVuelta = 'Avanza';
+//       else if (pVuelta <= 7) claseVehiculoVuelta = 'Van';
+//       else if (pVuelta <= 12) claseVehiculoVuelta = 'Sprinter';
+//       else if (pVuelta <= 25) claseVehiculoVuelta = 'Minibus';
+//       else claseVehiculoVuelta = 'Omnibus';
+//     }
+
+//     // 3. LOGICA DE VALIDACIÓN DE PRECIO EN BASE DE DATOS (Anti-Fraude)
+//     if (tour) {
+//       // Caso A: Es un Tour. El precio = (Tarifa Tour * Pasajeros) + Costo de Movilidad Round Trip
+//       // Buscamos los datos del tour
+//       const { data: dataTour, error: errTour } = await supabaseAdmin
+//         .from('tours')
+//         .select('*')
+//         .eq('nombre', tour)
+//         .single()
+
+//       if (errTour || !dataTour) throw new Error(`El tour '${tour}' no existe en el tarifario.`);
+
+//       // Buscamos la tarifa de movilidad asociada. El frontend debe enviar a qué zona pertenece su hotel.
+//       const { data: dataMovilidad, error: errMov } = await supabaseAdmin
+//         .from('tour_movilidad_tarifas')
+//         .select('precio_movilidad_rt')
+//         .eq('tour_id', dataTour.id)
+//         .eq('vehiculo_clase', vehiculo)
+//         .ilike('zona_hoteles', `%${zonaHotel}%`)
+//         .single()
+
+//       if (errMov || !dataMovilidad) {
+//         throw new Error(`No se encontró tarifa de transporte para el vehículo ${vehiculo} en la zona ${zonaHotel}.`);
+//       }
+
+//       precioCalculado = (Number(dataTour.precio_por_pasajero) * pasajeros) + Number(dataMovilidad.precio_movilidad_rt)
+
+//     } else {
+//       // Caso B: Es un Traslado directo. Consultamos la tabla 'rutas_traslados'
+//       const { data: dataRuta, error: errRuta } = await supabaseAdmin
+//         .from('rutas_traslados')
+//         .select('precio_pvt')
+//         .eq('origen', origen)
+//         .eq('destino', destino)
+//         .eq('vehiculo_clase', vehiculo)
+//         .single()
+
+//       if (errRuta || !dataRuta) {
+//         throw new Error(`No se encontró una tarifa válida de traslado para la ruta ${origen} -> ${destino} en un ${vehiculo}.`);
+//       }
+
+//       precioCalculado = Number(dataRuta.precio_pvt)
+
+//       //Cotizar Tramo de Retorno de forma independiente si está activo
+//       if (vueltaActiva) {
+//         const { data: dataRutaVuelta, error: errRutaVuelta } = await supabaseAdmin
+//           .from('rutas_traslados')
+//           .select('precio_pvt')
+//           .eq('origen', origenVuelta)
+//           .eq('destino', destinoVuelta)
+//           .eq('vehiculo_clase', claseVehiculoVuelta)
+//           .single()
+
+//         if (errRutaVuelta || !dataRutaVuelta) {
+//           throw new Error(`No se encontró una tarifa válida de retorno para la vuelta: ${origenVuelta} -> ${destinoVuelta} en un ${claseVehiculoVuelta}.`);
+//         }
+
+//         // Sumamos de manera asimétrica el costo de regreso al monto total de la reserva
+//         precioCalculado += Number(dataRutaVuelta.precio_pvt)
+//       }
+//     }
+
+//     // 4. GUARDAR LA RESERVA EN ESTADO PENDIENTE
+//     const { data: nuevaReserva, error: errReserva } = await supabaseAdmin
+//       .from('reservas')
+//       .insert({
+//         nombre, email, phone, fecha, hora, pasajeros, vehiculo,
+//         origen: tour ? null : origen,
+//         destino: tour ? null : destino,
+//         numero_vuelo: tour ? null : (numeroVuelo || null),
+//         tour: tour ? tour : null,
+//         zona_hotel: tour? zonaHotel : null,
+//         precio: precioCalculado,
+//         estado_pago: 'pendiente',
+//         // Guardado de metadatos de retorno
+//         vuelta_activa: tour ? false : (vueltaActiva || false),
+//         vuelta_origen: tour ? null : (origenVuelta || null),
+//         vuelta_destino: tour ? null : (destinoVuelta || null),
+//         vuelta_pasajeros: tour ? null : (pasajerosVuelta || null),
+//         vuelta_vehiculo: tour ? null : claseVehiculoVuelta,
+//         vuelta_fecha: tour ? null : (fechaVuelta || null),
+//         vuelta_hora: tour ? null : (horaVuelta || null),
+//         vuelta_numero_vuelo: tour ? null : (numeroVueloVuelta || null)
+//       })
+//       .select()
+//       .single()
+
+//     if (errReserva) throw new Error(`Error al registrar la reserva en base de datos: ${errReserva.message}`)
+
+//     // 5. COMUNICACIÓN CON LA API DE OPENPAY PERÚ
+//     const MERCHANT_ID = Deno.env.get('OPENPAY_MERCHANT_ID')
+//     const PRIVATE_KEY = Deno.env.get('OPENPAY_PRIVATE_KEY')
+//     const OPENPAY_URL = Deno.env.get('OPENPAY_API_URL') // https://sandbox-api.openpay.pe/v1
+
+//     // Credenciales en Basic Auth (requerido por Openpay cifrando la llave privada en Base64)
+//     const authHeader = `Basic ${btoa(PRIVATE_KEY + ':')}`
+
+//     // 1. LÓGICA DE CONVERSIÓN DE DIVISA (USD a PEN)
+//     // Definimos un tipo de cambio comercial base para el Norte (ej: 3.78 soles por dólar)
+//     // En el futuro puedes jalar este valor dinámicamente de una API de tipo de cambio en Perú
+//     const TIPO_DE_CAMBIO = 3.78;
+    
+//     const precioEnDolares = Number(precioCalculado);
+//     const precioEnSoles = precioEnDolares * TIPO_DE_CAMBIO;
+
+//     // 2. SANEAMIENTO UNIVERSAL DEL TELÉFONO (Para números locales e internacionales)
+//     let telefonoLimpio = phone.replace(/[^0-9]/g, '');
+//     if (telefonoLimpio.startsWith('51') && telefonoLimpio.length > 9) {
+//       telefonoLimpio = telefonoLimpio.substring(2);
+//     }
+//     if (telefonoLimpio.length < 7 || telefonoLimpio.length > 15) {
+//       telefonoLimpio = "999999999"; 
+//     }
+
+//     // 3. Separamos nombre y apellido requeridos por Openpay
+//     const nombreTrim = nombre.trim();
+//     const primerEspacio = nombreTrim.indexOf(" ");
+//     const name = primerEspacio !== -1 ? nombreTrim.substring(0, primerEspacio) : nombreTrim;
+//     const last_name = primerEspacio !== -1 ? nombreTrim.substring(primerEspacio + 1) : "Apellido";
+
+//     // Cambiar dinámicamente la descripción según la naturaleza del viaje comercial
+//     let descripcionDetalle = ""
+//     if (tour) {
+//       descripcionDetalle = `Tour Tabeach: ${tour} (Equiv. ${precioEnDolares} USD)`
+//     } else {
+//       descripcionDetalle = vueltaActiva 
+//         ? `Traslado Redondo: ${origen}➔${destino} / Retorno: ${origenVuelta}➔${destinoVuelta}`
+//         : `Traslado Simple: ${origen} a ${destino} (Equiv. ${precioEnDolares} USD)`
+//     }
+
+//     // 4. Armamos el cuerpo del cargo en SOLES (PEN) tal como lo exige BBVA Openpay Perú
+//     const openpayPayload = {
+//       method: "card",
+//       amount: parseFloat(Number(precioEnSoles).toFixed(2)), // Monto final convertido a Soles con 2 decimales
+//       currency: "PEN", // <-- CAMBIADO: Soles obligatorios para evitar el error 422
+//       description: descripcionDetalle.substring(0, 245),
+//       order_id: nuevaReserva.id,
+//       confirm: "false",    
+//       send_email: "true",  
+//       redirect_url: `${URL_FRONTEND}/reservar/exito?order=${nuevaReserva.id}`,
+//       cancel_url: `${URL_FRONTEND}/reservar/error?order=${nuevaReserva.id}`, 
+//       customer: {
+//         name: name,
+//         last_name: last_name,
+//         phone_number: telefonoLimpio,
+//         email: email.trim()
+//       }
+//     }
+
+//     console.log(`Enviando transacción a Openpay en Soles: S/.${openpayPayload.amount} (Tipo de cambio: ${TIPO_DE_CAMBIO})`);
+
+//     // 5. Consumimos el endpoint de /charges
+//     const openpayResponse = await fetch(
+//       `${OPENPAY_URL}/${MERCHANT_ID}/charges`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': authHeader
+//         },
+//         body: JSON.stringify(openpayPayload)
+//       }
+//     )
+
+//     const openpayData = await openpayResponse.json()
+
+//     if (!openpayResponse.ok) {
+//       console.error("Error devuelto por Openpay Charges API:", JSON.stringify(openpayData));
+//       throw new Error(`Openpay Error: ${openpayData.description || 'Fallo al procesar el cargo'}`);
+//     }
+
+//     const checkoutUrl = openpayData.payment_method?.url;
+
+//     if (!checkoutUrl) {
+//       throw new Error("Openpay no generó la URL de redirección.");
+//     }
+
+//     // 6. ACTUALIZAR LA RESERVA CON EL ID DE CARGO REAL Y EL MONTO FINAL EN SOLES
+//     // Es una excelente práctica guardar en tu tabla 'reservas' cuánto se le cobró en soles finalmente
+//     await supabaseAdmin
+//       .from('reservas')
+//       .update({ 
+//         openpay_charge_id: openpayData.id,
+//         // Si deseas añadir columnas en tu tabla para registrar la conversión:
+//         monto: openpayPayload.amount,
+//         // tipo_cambio: TIPO_DE_CAMBIO
+//       })
+//       .eq('id', nuevaReserva.id)
+
+//     // 7. DEVOLVER LA URL AL FRONTEND
+//     return new Response(
+//       JSON.stringify({ checkout_url: checkoutUrl }),
+//       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+//     )
+
+//   } catch (error) {
+//     return new Response(
+//       JSON.stringify({ error: error.message }),
+//       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+//     )
+//   }
+// })
+
+// openpay-checkout
+// import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+// const URL_FRONTEND = Deno.env.get('URL_FRONTEND')
+// // Configuración de las cabeceras CORS para permitir peticiones desde tu Frontend
+// const corsHeaders = {
+//   'Access-Control-Allow-Origin': '*',
+//   'Access-Control-Allow-Headers': '*',
+//   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// }
+
+// serve(async (req) => {
+//   // Manejo del pre-flight request de CORS
+//   if (req.method === 'OPTIONS') {
+//     return new Response('ok', { headers: corsHeaders })
+//   }
+
+//   try {
+//     // 1. Inicializar Clientes de Supabase con la firma del sistema (Service Role)
+//     // Usamos service_role para tener permisos de lectura de tarifas de forma interna y segura
+//     const supabaseAdmin = createClient(
+//       Deno.env.get('SUPABASE_URL') ?? '',
+//       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+//     )
+
+//     // 2. Extraer parámetros enviados por el Frontend
+//     const { 
+//       nombre, email, phone, fecha, hora, pasajeros, vehiculo, origen, destino, numeroVuelo, tour, zonaHotel,
+//       vueltaActiva, origenVuelta, destinoVuelta, pasajerosVuelta, fechaVuelta, horaVuelta, numeroVueloVuelta
+//     } = await req.json()
+
+//     // Validación básica de campos requeridos
+//     if (!nombre || !email || !pasajeros || !vehiculo || !fecha || !hora) {
+//       throw new Error("Faltan campos obligatorios para procesar la reserva.")
+//     }
+
+//     let precioCalculado = 0
+//     let claseVehiculoVuelta = null
+
+//     // 1. DETERMINAR LA CLASE DE VEHÍCULO PARA LA VUELTA SEGÚN PASAJEROS
+//     if (!tour && vueltaActiva) {
+//       const pVuelta = pasajerosVuelta || pasajeros;
+//       if (pVuelta <= 3) claseVehiculoVuelta = 'Auto';
+//       else if (pVuelta <= 5) claseVehiculoVuelta = 'Avanza';
+//       else if (pVuelta <= 7) claseVehiculoVuelta = 'Van';
+//       else if (pVuelta <= 12) claseVehiculoVuelta = 'Sprinter';
+//       else if (pVuelta <= 25) claseVehiculoVuelta = 'Minibus';
+//       else claseVehiculoVuelta = 'Omnibus';
+//     }
+
+//     // 3. LOGICA DE VALIDACIÓN DE PRECIO EN BASE DE DATOS (Anti-Fraude)
+//     if (tour) {
+//       // Caso A: Es un Tour. El precio = (Tarifa Tour * Pasajeros) + Costo de Movilidad Round Trip
+//       // Buscamos los datos del tour
+//       const { data: dataTour, error: errTour } = await supabaseAdmin
+//         .from('tours')
+//         .select('*')
+//         .eq('nombre', tour)
+//         .single()
+
+//       if (errTour || !dataTour) throw new Error(`El tour '${tour}' no existe en el tarifario.`);
+
+//       // Buscamos la tarifa de movilidad asociada. El frontend debe enviar a qué zona pertenece su hotel.
+//       const { data: dataMovilidad, error: errMov } = await supabaseAdmin
+//         .from('tour_movilidad_tarifas')
+//         .select('precio_movilidad_rt')
+//         .eq('tour_id', dataTour.id)
+//         .eq('vehiculo_clase', vehiculo)
+//         .ilike('zona_hoteles', `%${zonaHotel}%`)
+//         .single()
+
+//       if (errMov || !dataMovilidad) {
+//         throw new Error(`No se encontró tarifa de transporte para el vehículo ${vehiculo} en la zona ${zonaHotel}.`);
+//       }
+
+//       precioCalculado = (Number(dataTour.precio_por_pasajero) * pasajeros) + Number(dataMovilidad.precio_movilidad_rt)
+
+//     } else {
+//       // Caso B: Es un Traslado directo. Consultamos la tabla 'rutas_traslados'
+//       const { data: dataRuta, error: errRuta } = await supabaseAdmin
+//         .from('rutas_traslados')
+//         .select('precio_pvt')
+//         .eq('origen', origen)
+//         .eq('destino', destino)
+//         .eq('vehiculo_clase', vehiculo)
+//         .single()
+
+//       if (errRuta || !dataRuta) {
+//         throw new Error(`No se encontró una tarifa válida de traslado para la ruta ${origen} -> ${destino} en un ${vehiculo}.`);
+//       }
+
+//       precioCalculado = Number(dataRuta.precio_pvt)
+
+//       //Cotizar Tramo de Retorno de forma independiente si está activo
+//       if (vueltaActiva) {
+//         const { data: dataRutaVuelta, error: errRutaVuelta } = await supabaseAdmin
+//           .from('rutas_traslados')
+//           .select('precio_pvt')
+//           .eq('origen', origenVuelta)
+//           .eq('destino', destinoVuelta)
+//           .eq('vehiculo_clase', claseVehiculoVuelta)
+//           .single()
+
+//         if (errRutaVuelta || !dataRutaVuelta) {
+//           throw new Error(`No se encontró una tarifa válida de retorno para la vuelta: ${origenVuelta} -> ${destinoVuelta} en un ${claseVehiculoVuelta}.`);
+//         }
+
+//         // Sumamos de manera asimétrica el costo de regreso al monto total de la reserva
+//         precioCalculado += Number(dataRutaVuelta.precio_pvt)
+//       }
+//     }
+
+//     // 4. GUARDAR LA RESERVA EN ESTADO PENDIENTE
+//     const { data: nuevaReserva, error: errReserva } = await supabaseAdmin
+//       .from('reservas')
+//       .insert({
+//         nombre, email, phone, fecha, hora, pasajeros, vehiculo,
+//         origen: tour ? null : origen,
+//         destino: tour ? null : destino,
+//         numero_vuelo: tour ? null : (numeroVuelo || null),
+//         tour: tour ? tour : null,
+//         zona_hotel: tour? zonaHotel : null,
+//         precio: precioCalculado,
+//         estado_pago: 'pendiente',
+//         // Guardado de metadatos de retorno
+//         vuelta_activa: tour ? false : (vueltaActiva || false),
+//         vuelta_origen: tour ? null : (origenVuelta || null),
+//         vuelta_destino: tour ? null : (destinoVuelta || null),
+//         vuelta_pasajeros: tour ? null : (pasajerosVuelta || null),
+//         vuelta_vehiculo: tour ? null : claseVehiculoVuelta,
+//         vuelta_fecha: tour ? null : (fechaVuelta || null),
+//         vuelta_hora: tour ? null : (horaVuelta || null),
+//         vuelta_numero_vuelo: tour ? null : (numeroVueloVuelta || null)
+//       })
+//       .select()
+//       .single()
+
+//     if (errReserva) throw new Error(`Error al registrar la reserva en base de datos: ${errReserva.message}`)
+
+//     // 5. COMUNICACIÓN CON LA API DE OPENPAY PERÚ
+//     const MERCHANT_ID = Deno.env.get('OPENPAY_MERCHANT_ID')
+//     const PRIVATE_KEY = Deno.env.get('OPENPAY_PRIVATE_KEY')
+//     const OPENPAY_URL = Deno.env.get('OPENPAY_API_URL') // https://sandbox-api.openpay.pe/v1
+
+//     // Credenciales en Basic Auth (requerido por Openpay cifrando la llave privada en Base64)
+//     const authHeader = `Basic ${btoa(PRIVATE_KEY + ':')}`
+
+//     // 1. LÓGICA DE CONVERSIÓN DE DIVISA (USD a PEN)
+//     // Definimos un tipo de cambio comercial base para el Norte (ej: 3.78 soles por dólar)
+//     // En el futuro puedes jalar este valor dinámicamente de una API de tipo de cambio en Perú
+//     const TIPO_DE_CAMBIO = 3.78;
+    
+//     const precioEnDolares = Number(precioCalculado);
+//     const precioEnSoles = precioEnDolares * TIPO_DE_CAMBIO;
+
+//     // 2. SANEAMIENTO UNIVERSAL DEL TELÉFONO (Para números locales e internacionales)
+//     let telefonoLimpio = phone.replace(/[^0-9]/g, '');
+//     if (telefonoLimpio.startsWith('51') && telefonoLimpio.length > 9) {
+//       telefonoLimpio = telefonoLimpio.substring(2);
+//     }
+//     if (telefonoLimpio.length < 7 || telefonoLimpio.length > 15) {
+//       telefonoLimpio = "999999999"; 
+//     }
+
+//     // 3. Separamos nombre y apellido requeridos por Openpay
+//     const nombreTrim = nombre.trim();
+//     const primerEspacio = nombreTrim.indexOf(" ");
+//     const name = primerEspacio !== -1 ? nombreTrim.substring(0, primerEspacio) : nombreTrim;
+//     const last_name = primerEspacio !== -1 ? nombreTrim.substring(primerEspacio + 1) : "Apellido";
+
+//     // Cambiar dinámicamente la descripción según la naturaleza del viaje comercial
+//     let descripcionDetalle = ""
+//     if (tour) {
+//       descripcionDetalle = `Tour Tabeach: ${tour} (Equiv. ${precioEnDolares} USD)`
+//     } else {
+//       descripcionDetalle = vueltaActiva 
+//         ? `Traslado Redondo: ${origen}➔${destino} / Retorno: ${origenVuelta}➔${destinoVuelta}`
+//         : `Traslado Simple: ${origen} a ${destino} (Equiv. ${precioEnDolares} USD)`
+//     }
+
+//     // 4. Armamos el cuerpo del cargo en SOLES (PEN) tal como lo exige BBVA Openpay Perú
+//     const openpayPayload = {
+//       method: "card",
+//       amount: parseFloat(Number(precioEnSoles).toFixed(2)), // Monto final convertido a Soles con 2 decimales
+//       currency: "PEN", // <-- CAMBIADO: Soles obligatorios para evitar el error 422
+//       description: descripcionDetalle.substring(0, 245),
+//       order_id: nuevaReserva.id,
+//       confirm: "false",    
+//       send_email: "true",  
+//       redirect_url: `${URL_FRONTEND}/reservar/exito?order=${nuevaReserva.id}`,
+//       cancel_url: `${URL_FRONTEND}/reservar/error?order=${nuevaReserva.id}`, 
+//       customer: {
+//         name: name,
+//         last_name: last_name,
+//         phone_number: telefonoLimpio,
+//         email: email.trim()
+//       }
+//     }
+
+//     console.log(`Enviando transacción a Openpay en Soles: S/.${openpayPayload.amount} (Tipo de cambio: ${TIPO_DE_CAMBIO})`);
+
+//     // 5. Consumimos el endpoint de /charges
+//     const openpayResponse = await fetch(
+//       `${OPENPAY_URL}/${MERCHANT_ID}/charges`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': authHeader
+//         },
+//         body: JSON.stringify(openpayPayload)
+//       }
+//     )
+
+//     const openpayData = await openpayResponse.json()
+
+//     if (!openpayResponse.ok) {
+//       console.error("Error devuelto por Openpay Charges API:", JSON.stringify(openpayData));
+//       throw new Error(`Openpay Error: ${openpayData.description || 'Fallo al procesar el cargo'}`);
+//     }
+
+//     const checkoutUrl = openpayData.payment_method?.url;
+
+//     if (!checkoutUrl) {
+//       throw new Error("Openpay no generó la URL de redirección.");
+//     }
+
+//     // 6. ACTUALIZAR LA RESERVA CON EL ID DE CARGO REAL Y EL MONTO FINAL EN SOLES
+//     // Es una excelente práctica guardar en tu tabla 'reservas' cuánto se le cobró en soles finalmente
+//     await supabaseAdmin
+//       .from('reservas')
+//       .update({ 
+//         openpay_charge_id: openpayData.id,
+//         // Si deseas añadir columnas en tu tabla para registrar la conversión:
+//         monto: openpayPayload.amount,
+//         // tipo_cambio: TIPO_DE_CAMBIO
+//       })
+//       .eq('id', nuevaReserva.id)
+
+//     // 7. DEVOLVER LA URL AL FRONTEND
+//     return new Response(
+//       JSON.stringify({ checkout_url: checkoutUrl }),
+//       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+//     )
+
+//   } catch (error) {
+//     return new Response(
+//       JSON.stringify({ error: error.message }),
+//       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+//     )
+//   }
+// })
+
+
+// Tarifas y reservas de traslados y tours
+// CREATE TABLE rutas_traslados (
+//     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//     origen TEXT NOT NULL,         -- Ej: 'Aeropuerto Piura', 'Aeropuerto Tumbes'
+//     destino TEXT NOT NULL,        -- Ej: 'Máncora', 'Punta Sal'
+//     vehiculo_clase TEXT NOT NULL, -- Ej: 'Auto', 'Van', 'Sprinter', 'Avanza'
+//     precio_pvt NUMERIC(10, 2) NOT NULL, -- Precio en servicio privado
+//     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+// );
+
+// -- Índice para acelerar las búsquedas del cotizador en el Frontend
+// CREATE INDEX idx_rutas_traslados_lookup ON rutas_traslados(origen, destino, vehiculo_clase);
+
+// CREATE TABLE tours (
+//     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//     nombre TEXT NOT NULL,                  -- Ej: 'Tour de Manglares', 'Nado con Tortugas'
+//     precio_por_pasajero NUMERIC(10, 2) NOT NULL,
+//     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+// );
+
+// CREATE TABLE tour_movilidad_tarifas (
+//     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//     tour_id UUID REFERENCES tours(id) ON DELETE CASCADE,
+//     zona_hoteles TEXT NOT NULL,    -- Ej: 'Máncora/Las Pocitas', 'Punta Sal/Zorritos'
+//     vehiculo_clase TEXT NOT NULL,  -- Ej: 'Auto', 'Van', 'Sprinter'
+//     precio_movilidad_rt NUMERIC(10, 2) NOT NULL,
+//     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+// );
+
+// CREATE TABLE reservas (
+//     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    
+//     -- Datos del Cliente
+//     nombre TEXT NOT NULL,
+//     email TEXT NOT NULL,
+//     phone TEXT NOT NULL,
+    
+//     -- Detalles del Viaje
+//     fecha DATE NOT NULL,
+//     hora TIME NOT NULL,
+//     pasajeros INTEGER NOT NULL,
+//     vehiculo TEXT NOT NULL,
+    
+//     -- Campos Condicionales (Traslado vs Tour)
+//     origen TEXT NULL,       -- Vacío si es Tour
+//     destino TEXT NULL,      -- Vacío si es Tour
+//     tour TEXT NULL,         -- Nombre del tour. Vacío si es Traslado directo
+    
+//     -- Control Financiero y Pasarela
+//     precio NUMERIC(10, 2) NOT NULL,
+//     estado_pago TEXT DEFAULT 'pendiente', -- 'pendiente', 'pagado', 'fallido'
+//     openpay_charge_id TEXT NULL,          -- ID de transacción que te dará Openpay
+    
+//     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+// );
+
+// ALTER TABLE reservas ADD CONSTRAINT chk_traslado_o_tour 
+// CHECK (
+//     (tour IS NULL AND origen IS NOT NULL AND destino IS NOT NULL) OR 
+//     (tour IS NOT NULL AND origen IS NULL AND destino IS NULL)
+// );
+
+// Cargas de rutas de traslado y tarifas por vehiculo
+// INSERT INTO rutas_traslados (origen, destino, vehiculo_clase, precio_pvt) VALUES
+// -- DESDE AEROPUERTO DE PIURA A:
+// ('Aeropuerto Piura', 'Colán', 'Auto', 52.00),
+// ('Aeropuerto Piura', 'Colán', 'Avanza', 78.00),
+// ('Aeropuerto Piura', 'Colán', 'Van', 104.00),
+// ('Aeropuerto Piura', 'Colán', 'Sprinter', 195.00),
+// --('Aeropuerto Piura', 'Colán', 'Custer', 292.00),
+// ('Aeropuerto Piura', 'Colán', 'Minibus', 360.00),
+// ('Aeropuerto Piura', 'Colán', 'Omnibus', 480.00),
+// ('Aeropuerto Piura', 'Paita', 'Auto', 52.00),
+// ('Aeropuerto Piura', 'Paita', 'Avanza', 78.00),
+// ('Aeropuerto Piura', 'Paita', 'Van', 104.00),
+// ('Aeropuerto Piura', 'Paita', 'Sprinter', 195.00),
+// --('Aeropuerto Piura', 'Paita', 'Custer', 292.00),
+// ('Aeropuerto Piura', 'Paita', 'Minibus', 360.00),
+// ('Aeropuerto Piura', 'Paita', 'Omnibus', 480.00),
+
+// ('Aeropuerto Piura', 'Lobitos', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Lobitos', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Lobitos', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Lobitos', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Lobitos', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Lobitos', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Lobitos', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Cabo Blanco', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Cabo Blanco', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Los Órganos', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Los Órganos', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Máncora', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Máncora', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Máncora', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Máncora', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Máncora', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Máncora', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Máncora', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Punta Sal', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Punta Sal', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Auto', 92.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Avanza', 128.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Van', 160.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Sprinter', 225.00),
+// --('Aeropuerto Piura', 'Punta Mero', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Punta Mero', 'Omnibus', 610.00),
+
+// ('Aeropuerto Piura', 'Acapulco', 'Auto', 122.00),
+// ('Aeropuerto Piura', 'Acapulco', 'Avanza', 145.00),
+// ('Aeropuerto Piura', 'Acapulco', 'Van', 180.00),
+// ('Aeropuerto Piura', 'Acapulco', 'Sprinter', 242.00),
+// --('Aeropuerto Piura', 'Acapulco', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Acapulco', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Acapulco', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Auto', 122.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Avanza', 145.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Van', 180.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Sprinter', 242.00),
+// --('Aeropuerto Piura', 'Bocapan', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Bocapan', 'Omnibus', 610.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Auto', 122.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Avanza', 145.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Van', 180.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Sprinter', 242.00),
+// --('Aeropuerto Piura', 'Zorritos', 'Custer', 390.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Minibus', 490.00),
+// ('Aeropuerto Piura', 'Zorritos', 'Omnibus', 610.00),
+
+// -- DESDE AEROPUERTO DE TALARA A:
+// ('Aeropuerto Talara', 'Colán', 'Auto', 88.00),
+// ('Aeropuerto Talara', 'Colán', 'Avanza', 110.00),
+// ('Aeropuerto Talara', 'Colán', 'Van', 180.00),
+// ('Aeropuerto Talara', 'Colán', 'Sprinter', 230.00),
+// --('Aeropuerto Talara', 'Colán', 'Custer', 290.00),
+// ('Aeropuerto Talara', 'Colán', 'Minibus', 395.00),
+// ('Aeropuerto Talara', 'Colán', 'Omnibus', 545.00),
+// ('Aeropuerto Talara', 'Paita', 'Auto', 88.00),
+// ('Aeropuerto Talara', 'Paita', 'Avanza', 110.00),
+// ('Aeropuerto Talara', 'Paita', 'Van', 180.00),
+// ('Aeropuerto Talara', 'Paita', 'Sprinter', 230.00),
+// --('Aeropuerto Talara', 'Paita', 'Custer', 290.00),
+// ('Aeropuerto Talara', 'Paita', 'Minibus', 395.00),
+// ('Aeropuerto Talara', 'Paita', 'Omnibus', 545.00),
+
+// ('Aeropuerto Talara', 'Los Órganos', 'Auto', 52.00),
+// ('Aeropuerto Talara', 'Los Órganos', 'Avanza', 88.00),
+// ('Aeropuerto Talara', 'Los Órganos', 'Van', 104.00),
+// ('Aeropuerto Talara', 'Los Órganos', 'Sprinter', 195.00),
+// --('Aeropuerto Talara', 'Los Órganos', 'Custer', 250.00),
+// ('Aeropuerto Talara', 'Los Órganos', 'Minibus', 360.00),
+// ('Aeropuerto Talara', 'Los Órganos', 'Omnibus', 480.00),
+// ('Aeropuerto Talara', 'Máncora', 'Auto', 52.00),
+// ('Aeropuerto Talara', 'Máncora', 'Avanza', 88.00),
+// ('Aeropuerto Talara', 'Máncora', 'Van', 104.00),
+// ('Aeropuerto Talara', 'Máncora', 'Sprinter', 195.00),
+// --('Aeropuerto Talara', 'Máncora', 'Custer', 250.00),
+// ('Aeropuerto Talara', 'Máncora', 'Minibus', 360.00),
+// ('Aeropuerto Talara', 'Máncora', 'Omnibus', 480.00),
+
+// ('Aeropuerto Talara', 'Punta Sal', 'Auto', 58.00),
+// ('Aeropuerto Talara', 'Punta Sal', 'Avanza', 88.00),
+// ('Aeropuerto Talara', 'Punta Sal', 'Van', 108.00),
+// ('Aeropuerto Talara', 'Punta Sal', 'Sprinter', 195.00),
+// --('Aeropuerto Talara', 'Punta Sal', 'Custer', 250.00),
+// ('Aeropuerto Talara', 'Punta Sal', 'Minibus', 360.00),
+// ('Aeropuerto Talara', 'Punta Sal', 'Omnibus', 480.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Auto', 58.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Avanza', 88.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Van', 108.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Sprinter', 195.00),
+// --('Aeropuerto Talara', 'Punta Mero', 'Custer', 250.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Minibus', 360.00),
+// ('Aeropuerto Talara', 'Punta Mero', 'Omnibus', 480.00),
+
+// ('Aeropuerto Talara', 'Acapulco', 'Auto', 88.00),
+// ('Aeropuerto Talara', 'Acapulco', 'Avanza', 110.00),
+// ('Aeropuerto Talara', 'Acapulco', 'Van', 140.00),
+// ('Aeropuerto Talara', 'Acapulco', 'Sprinter', 230.00),
+// --('Aeropuerto Talara', 'Acapulco', 'Custer', 290.00),
+// ('Aeropuerto Talara', 'Acapulco', 'Minibus', 380.00),
+// ('Aeropuerto Talara', 'Acapulco', 'Omnibus', 500.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Auto', 88.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Avanza', 110.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Van', 140.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Sprinter', 230.00),
+// --('Aeropuerto Talara', 'Bocapan', 'Custer', 290.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Minibus', 380.00),
+// ('Aeropuerto Talara', 'Bocapan', 'Omnibus', 500.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Auto', 88.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Avanza', 110.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Van', 140.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Sprinter', 230.00),
+// --('Aeropuerto Talara', 'Zorritos', 'Custer', 290.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Minibus', 380.00),
+// ('Aeropuerto Talara', 'Zorritos', 'Omnibus', 500.00),
+
+// -- DESDE AEROPUERTO DE TUMBES A:
+// ('Aeropuerto Tumbes', 'Zorritos', 'Auto', 28.00),
+// ('Aeropuerto Tumbes', 'Zorritos', 'Avanza', 38.00),
+// ('Aeropuerto Tumbes', 'Zorritos', 'Van', 58.00),
+// ('Aeropuerto Tumbes', 'Zorritos', 'Sprinter', 108.00),
+// --('Aeropuerto Tumbes', 'Zorritos', 'Custer', 120.00),
+// ('Aeropuerto Tumbes', 'Zorritos', 'Minibus', 168.00),
+// ('Aeropuerto Tumbes', 'Zorritos', 'Omnibus', 220.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Auto', 28.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Avanza', 38.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Van', 58.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Sprinter', 108.00),
+// --('Aeropuerto Tumbes', 'Bocapan', 'Custer', 120.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Minibus', 168.00),
+// ('Aeropuerto Tumbes', 'Bocapan', 'Omnibus', 220.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Auto', 28.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Avanza', 38.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Van', 58.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Sprinter', 108.00),
+// --('Aeropuerto Tumbes', 'Acapulco', 'Custer', 120.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Minibus', 168.00),
+// ('Aeropuerto Tumbes', 'Acapulco', 'Omnibus', 220.00),
+
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Auto', 52.00),
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Avanza', 76.00),
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Van', 104.00),
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Sprinter', 170.00),
+// --('Aeropuerto Tumbes', 'Punta Mero', 'Custer', 268.00),
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Minibus', 345.00),
+// ('Aeropuerto Tumbes', 'Punta Mero', 'Omnibus', 450.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Auto', 52.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Avanza', 76.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Van', 104.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Sprinter', 170.00),
+// --('Aeropuerto Tumbes', 'Punta Sal', 'Custer', 268.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Minibus', 345.00),
+// ('Aeropuerto Tumbes', 'Punta Sal', 'Omnibus', 450.00),
+
+// ('Aeropuerto Tumbes', 'Máncora', 'Auto', 64.00),
+// ('Aeropuerto Tumbes', 'Máncora', 'Avanza', 88.00),
+// ('Aeropuerto Tumbes', 'Máncora', 'Van', 116.00),
+// ('Aeropuerto Tumbes', 'Máncora', 'Sprinter', 218.00),
+// --('Aeropuerto Tumbes', 'Máncora', 'Custer', 250.00),
+// ('Aeropuerto Tumbes', 'Máncora', 'Minibus', 385.00),
+// ('Aeropuerto Tumbes', 'Máncora', 'Omnibus', 480.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Auto', 64.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Avanza', 88.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Van', 116.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Sprinter', 218.00),
+// --('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Custer', 250.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Minibus', 385.00),
+// ('Aeropuerto Tumbes', 'Las Pocitas - Vichayito', 'Omnibus', 480.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Auto', 64.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Avanza', 88.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Van', 116.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Sprinter', 218.00),
+// --('Aeropuerto Tumbes', 'Los Órganos', 'Custer', 250.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Minibus', 385.00),
+// ('Aeropuerto Tumbes', 'Los Órganos', 'Omnibus', 480.00);
+
+// Insertar precios de tours
+// INSERT INTO tours (nombre, precio_por_pasajero) VALUES
+// ('Tour de Manglares', 12.00),
+// ('Tour Nado Con Tortugas Marinas', 25.00),
+// ('Tour Avistamiento de Ballenas', 35.00),
+// ('Tour de Pesca y Nado con Tortugas', 35.00);
+
+// Tarifas de tours por vehiculo
+// INSERT INTO tour_movilidad_tarifas (tour_id, zona_hoteles, vehiculo_clase, precio_movilidad_rt) VALUES
+// -- 1. TOUR DE MANGLARES (Movilidad Round Trip)
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Zorritos/Bocapan/Acapulco', 'Auto', 56.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Zorritos/Bocapan/Acapulco', 'Van', 90.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Zorritos/Bocapan/Acapulco', 'Sprinter', 160.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Zorritos/Bocapan/Acapulco', 'Minibus', 240.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Zorritos/Bocapan/Acapulco', 'Bus', 315.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Punta Mero/Punta Sal', 'Auto', 78.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Punta Mero/Punta Sal', 'Van', 156.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Punta Mero/Punta Sal', 'Sprinter', 270.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Punta Mero/Punta Sal', 'Minibus', 488.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Punta Mero/Punta Sal', 'Bus', 663.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Auto', 96.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Van', 180.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Sprinter', 285.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Minibus', 540.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Manglares'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Bus', 720.00),
+
+// -- 3. TOUR NADO CON TORTUGAS MARINAS (Movilidad Round Trip)
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Auto', 38.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Van', 76.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Sprinter', 132.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Minibus', 170.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Bus', 194.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Punta Mero/Punta Sal', 'Auto', 48.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Punta Mero/Punta Sal', 'Van', 92.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Punta Mero/Punta Sal', 'Sprinter', 185.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Punta Mero/Punta Sal', 'Minibus', 225.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Punta Mero/Punta Sal', 'Bus', 340.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Zorritos/Bocapan/Acapulco', 'Auto', 66.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Zorritos/Bocapan/Acapulco', 'Van', 120.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Zorritos/Bocapan/Acapulco', 'Sprinter', 237.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Zorritos/Bocapan/Acapulco', 'Minibus', 458.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Nado Con Tortugas Marinas'), 'Zorritos/Bocapan/Acapulco', 'Bus', 540.00),
+
+// -- 4. TOUR AVISTAMIENTO DE BALLENAS (Movilidad Round Trip)
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Auto', 38.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Van', 76.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Sprinter', 132.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Minibus', 170.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Bus', 194.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Punta Mero/Punta Sal', 'Auto', 48.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Punta Mero/Punta Sal', 'Van', 92.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Punta Mero/Punta Sal', 'Sprinter', 185.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Punta Mero/Punta Sal', 'Minibus', 225.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Punta Mero/Punta Sal', 'Bus', 340.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Zorritos/Bocapan/Acapulco', 'Auto', 66.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Zorritos/Bocapan/Acapulco', 'Van', 120.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Zorritos/Bocapan/Acapulco', 'Sprinter', 237.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Zorritos/Bocapan/Acapulco', 'Minibus', 458.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour Avistamiento de Ballenas'), 'Zorritos/Bocapan/Acapulco', 'Bus', 540.00),
+
+// -- 2. TOUR CATACAOS ARTESANAL & RUTA HISTÓRICA (Movilidad One Way desde/hacia AP Piura)
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Auto', 38.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Van', 76.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Sprinter', 132.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Minibus', 170.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Máncora/Las Pocitas/Vichayito/Los Órganos', 'Bus', 194.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Punta Mero/Punta Sal', 'Auto', 48.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Punta Mero/Punta Sal', 'Van', 92.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Punta Mero/Punta Sal', 'Sprinter', 185.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Punta Mero/Punta Sal', 'Minibus', 225.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Punta Mero/Punta Sal', 'Bus', 340.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Zorritos/Bocapan/Acapulco', 'Auto', 66.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Zorritos/Bocapan/Acapulco', 'Van', 120.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Zorritos/Bocapan/Acapulco', 'Sprinter', 237.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Zorritos/Bocapan/Acapulco', 'Minibus', 458.00),
+// ((SELECT id FROM tours WHERE nombre = 'Tour de Pesca y Nado con Tortugas'), 'Zorritos/Bocapan/Acapulco', 'Bus', 540.00);
+
+// Nueva tabla reservas para ida y vuelta
+// -- 1. Eliminar la tabla y restricción anterior si existen para recrearla limpiamente
+// DROP TABLE IF EXISTS reservas CASCADE;
+
+// -- 2. Crear la tabla adaptada para Ida y Vuelta reactiva
+// CREATE TABLE reservas (
+//     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    
+//     -- Datos del Cliente
+//     nombre TEXT NOT NULL,
+//     email TEXT NOT NULL,
+//     phone TEXT NOT NULL,
+    
+//     -- Detalles de la Ida
+//     fecha DATE NOT NULL,
+//     hora TIME NOT NULL,
+//     pasajeros INTEGER NOT NULL,
+//     vehiculo TEXT NOT NULL,
+//     origen TEXT NULL,             -- Nulo si es Tour
+//     destino TEXT NULL,            -- Nulo si es Tour
+//     numero_vuelo TEXT NULL,
+    
+//     -- Control del Retorno (Vuelta)
+//     vuelta_activa BOOLEAN DEFAULT FALSE,
+//     vuelta_fecha DATE NULL,
+//     vuelta_hora TIME NULL,
+//     vuelta_pasajeros INTEGER NULL,
+//     vuelta_vehiculo TEXT NULL,    -- Por si la clase cambia debido al número de pasajeros
+//     vuelta_origen TEXT NULL,
+//     vuelta_destino TEXT NULL,
+//     vuelta_numero_vuelo TEXT NULL,
+    
+//     -- Campos de Contexto Operativo
+//     tour TEXT NULL,               -- Nombre del tour si aplica
+//     zona_hotel TEXT NULL,         -- Pickup zone del Tour o traslado especial
+    
+//     -- Control Financiero y Pasarela
+//     precio NUMERIC(10, 2) NOT NULL,       -- Precio total calculado en USD
+//     monto_pen NUMERIC(10, 2) NULL,        -- Monto final cobrado en Soles (PEN)
+//     estado_pago TEXT DEFAULT 'pendiente', -- 'pendiente', 'pagado', 'fallido'
+//     openpay_charge_id TEXT NULL,          -- ID de transacción Openpay
+    
+//     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+// );
+
+// -- 3. Restricción avanzada para validar coherencia en traslados y tours
+// ALTER TABLE reservas ADD CONSTRAINT chk_traslado_o_tour 
+// CHECK (
+//     -- Caso A: Es un Tour (No debe haber rutas de traslado explícitas)
+//     (tour IS NOT NULL AND origen IS NULL AND destino IS NULL AND vuelta_origen IS NULL AND vuelta_destino IS NULL) 
+//     OR 
+//     -- Caso B: Es un Traslado Simple (Solo Ida)
+//     (tour IS NULL AND vuelta_activa = FALSE AND origen IS NOT NULL AND destino IS NOT NULL) 
+//     OR 
+//     -- Caso C: Es un Traslado de Ida y Vuelta Completo
+//     (tour IS NULL AND vuelta_activa = TRUE AND origen IS NOT NULL AND destino IS NOT NULL AND vuelta_origen IS NOT NULL AND vuelta_destino IS NOT NULL)
+// );
+
+// Cargas de tarifas de traslados a aeropuertos
+// INSERT INTO rutas_traslados (origen, destino, vehiculo_clase, precio_pvt) VALUES
+// -- HACIA AEROPUERTO DE PIURA DESDE:
+// ('Colán', 'Aeropuerto Piura', 'Auto', 52.00),
+// ('Colán', 'Aeropuerto Piura', 'Avanza', 78.00),
+// ('Colán', 'Aeropuerto Piura', 'Van', 104.00),
+// ('Colán', 'Aeropuerto Piura', 'Sprinter', 195.00),
+// --('Colán', 'Aeropuerto Piura', 'Custer', 292.00),
+// ('Colán', 'Aeropuerto Piura', 'Minibus', 360.00),
+// ('Colán', 'Aeropuerto Piura', 'Omnibus', 480.00),
+// ('Paita', 'Aeropuerto Piura', 'Auto', 52.00),
+// ('Paita', 'Aeropuerto Piura', 'Avanza', 78.00),
+// ('Paita', 'Aeropuerto Piura', 'Van', 104.00),
+// ('Paita', 'Aeropuerto Piura', 'Sprinter', 195.00),
+// --('Paita', 'Aeropuerto Piura', 'Custer', 292.00),
+// ('Paita', 'Aeropuerto Piura', 'Minibus', 360.00),
+// ('Paita', 'Aeropuerto Piura', 'Omnibus', 480.00),
+
+// ('Lobitos', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Lobitos', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Lobitos', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Lobitos', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Lobitos', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Lobitos', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Lobitos', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Cabo Blanco', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Cabo Blanco', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Los Órganos', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Los Órganos', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Máncora', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Máncora', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Máncora', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Máncora', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Máncora', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Máncora', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Máncora', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Punta Sal', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Punta Sal', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Auto', 92.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Avanza', 128.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Van', 160.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Sprinter', 225.00),
+// --('Punta Mero', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Punta Mero', 'Aeropuerto Piura', 'Omnibus', 610.00),
+
+// ('Acapulco', 'Aeropuerto Piura', 'Auto', 122.00),
+// ('Acapulco', 'Aeropuerto Piura', 'Avanza', 145.00),
+// ('Acapulco', 'Aeropuerto Piura', 'Van', 180.00),
+// ('Acapulco', 'Aeropuerto Piura', 'Sprinter', 242.00),
+// --('Acapulco', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Acapulco', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Acapulco', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Auto', 122.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Avanza', 145.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Van', 180.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Sprinter', 242.00),
+// --('Bocapan', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Bocapan', 'Aeropuerto Piura', 'Omnibus', 610.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Auto', 122.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Avanza', 145.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Van', 180.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Sprinter', 242.00),
+// --('Zorritos', 'Aeropuerto Piura', 'Custer', 390.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Minibus', 490.00),
+// ('Zorritos', 'Aeropuerto Piura', 'Omnibus', 610.00),
+
+// -- HACIA AEROPUERTO DE TALARA DESDE:
+// ('Colán', 'Aeropuerto Talara', 'Auto', 88.00),
+// ('Colán', 'Aeropuerto Talara', 'Avanza', 110.00),
+// ('Colán', 'Aeropuerto Talara', 'Van', 180.00),
+// ('Colán', 'Aeropuerto Talara', 'Sprinter', 230.00),
+// --('Colán', 'Aeropuerto Talara', 'Custer', 290.00),
+// ('Colán', 'Aeropuerto Talara', 'Minibus', 395.00),
+// ('Colán', 'Aeropuerto Talara', 'Omnibus', 545.00),
+// ('Paita', 'Aeropuerto Talara', 'Auto', 88.00),
+// ('Paita', 'Aeropuerto Talara', 'Avanza', 110.00),
+// ('Paita', 'Aeropuerto Talara', 'Van', 180.00),
+// ('Paita', 'Aeropuerto Talara', 'Sprinter', 230.00),
+// --('Paita', 'Aeropuerto Talara', 'Custer', 290.00),
+// ('Paita', 'Aeropuerto Talara', 'Minibus', 395.00),
+// ('Paita', 'Aeropuerto Talara', 'Omnibus', 545.00),
+
+// ('Los Órganos', 'Aeropuerto Talara', 'Auto', 52.00),
+// ('Los Órganos', 'Aeropuerto Talara', 'Avanza', 88.00),
+// ('Los Órganos', 'Aeropuerto Talara', 'Van', 104.00),
+// ('Los Órganos', 'Aeropuerto Talara', 'Sprinter', 195.00),
+// --('Los Órganos', 'Aeropuerto Talara', 'Custer', 250.00),
+// ('Los Órganos', 'Aeropuerto Talara', 'Minibus', 360.00),
+// ('Los Órganos', 'Aeropuerto Talara', 'Omnibus', 480.00),
+// ('Máncora', 'Aeropuerto Talara', 'Auto', 52.00),
+// ('Máncora', 'Aeropuerto Talara', 'Avanza', 88.00),
+// ('Máncora', 'Aeropuerto Talara', 'Van', 104.00),
+// ('Máncora', 'Aeropuerto Talara', 'Sprinter', 195.00),
+// --('Máncora', 'Aeropuerto Talara', 'Custer', 250.00),
+// ('Máncora', 'Aeropuerto Talara', 'Minibus', 360.00),
+// ('Máncora', 'Aeropuerto Talara', 'Omnibus', 480.00),
+
+// ('Punta Sal', 'Aeropuerto Talara', 'Auto', 58.00),
+// ('Punta Sal', 'Aeropuerto Talara', 'Avanza', 88.00),
+// ('Punta Sal', 'Aeropuerto Talara', 'Van', 108.00),
+// ('Punta Sal', 'Aeropuerto Talara', 'Sprinter', 195.00),
+// --('Punta Sal', 'Aeropuerto Talara', 'Custer', 250.00),
+// ('Punta Sal', 'Aeropuerto Talara', 'Minibus', 360.00),
+// ('Punta Sal', 'Aeropuerto Talara', 'Omnibus', 480.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Auto', 58.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Avanza', 88.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Van', 108.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Sprinter', 195.00),
+// --('Punta Mero', 'Aeropuerto Talara', 'Custer', 250.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Minibus', 360.00),
+// ('Punta Mero', 'Aeropuerto Talara', 'Omnibus', 480.00),
+
+// ('Acapulco', 'Aeropuerto Talara', 'Auto', 88.00),
+// ('Acapulco', 'Aeropuerto Talara', 'Avanza', 110.00),
+// ('Acapulco', 'Aeropuerto Talara', 'Van', 140.00),
+// ('Acapulco', 'Aeropuerto Talara', 'Sprinter', 230.00),
+// --('Acapulco', 'Aeropuerto Talara', 'Custer', 290.00),
+// ('Acapulco', 'Aeropuerto Talara', 'Minibus', 380.00),
+// ('Acapulco', 'Aeropuerto Talara', 'Omnibus', 500.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Auto', 88.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Avanza', 110.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Van', 140.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Sprinter', 230.00),
+// --('Bocapan', 'Aeropuerto Talara', 'Custer', 290.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Minibus', 380.00),
+// ('Bocapan', 'Aeropuerto Talara', 'Omnibus', 500.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Auto', 88.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Avanza', 110.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Van', 140.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Sprinter', 230.00),
+// --('Zorritos', 'Aeropuerto Talara', 'Custer', 290.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Minibus', 380.00),
+// ('Zorritos', 'Aeropuerto Talara', 'Omnibus', 500.00),
+
+// -- HACIA AEROPUERTO DE TUMBES DESDE:
+// ('Zorritos', 'Aeropuerto Tumbes', 'Auto', 28.00),
+// ('Zorritos', 'Aeropuerto Tumbes', 'Avanza', 38.00),
+// ('Zorritos', 'Aeropuerto Tumbes', 'Van', 58.00),
+// ('Zorritos', 'Aeropuerto Tumbes', 'Sprinter', 108.00),
+// --('Zorritos', 'Aeropuerto Tumbes', 'Custer', 120.00),
+// ('Zorritos', 'Aeropuerto Tumbes', 'Minibus', 168.00),
+// ('Zorritos', 'Aeropuerto Tumbes', 'Omnibus', 220.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Auto', 28.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Avanza', 38.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Van', 58.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Sprinter', 108.00),
+// --('Bocapan', 'Aeropuerto Tumbes', 'Custer', 120.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Minibus', 168.00),
+// ('Bocapan', 'Aeropuerto Tumbes', 'Omnibus', 220.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Auto', 28.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Avanza', 38.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Van', 58.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Sprinter', 108.00),
+// --('Acapulco', 'Aeropuerto Tumbes', 'Custer', 120.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Minibus', 168.00),
+// ('Acapulco', 'Aeropuerto Tumbes', 'Omnibus', 220.00),
+
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Auto', 52.00),
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Avanza', 76.00),
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Van', 104.00),
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Sprinter', 170.00),
+// --('Punta Mero', 'Aeropuerto Tumbes', 'Custer', 268.00),
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Minibus', 345.00),
+// ('Punta Mero', 'Aeropuerto Tumbes', 'Omnibus', 450.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Auto', 52.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Avanza', 76.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Van', 104.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Sprinter', 170.00),
+// --('Punta Sal', 'Aeropuerto Tumbes', 'Custer', 268.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Minibus', 345.00),
+// ('Punta Sal', 'Aeropuerto Tumbes', 'Omnibus', 450.00),
+
+// ('Máncora', 'Aeropuerto Tumbes', 'Auto', 64.00),
+// ('Máncora', 'Aeropuerto Tumbes', 'Avanza', 88.00),
+// ('Máncora', 'Aeropuerto Tumbes', 'Van', 116.00),
+// ('Máncora', 'Aeropuerto Tumbes', 'Sprinter', 218.00),
+// --('Máncora', 'Aeropuerto Tumbes', 'Custer', 250.00),
+// ('Máncora', 'Aeropuerto Tumbes', 'Minibus', 385.00),
+// ('Máncora', 'Aeropuerto Tumbes', 'Omnibus', 480.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Auto', 64.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Avanza', 88.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Van', 116.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Sprinter', 218.00),
+// --('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Custer', 250.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Minibus', 385.00),
+// ('Las Pocitas - Vichayito', 'Aeropuerto Tumbes', 'Omnibus', 480.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Auto', 64.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Avanza', 88.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Van', 116.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Sprinter', 218.00),
+// --('Los Órganos', 'Aeropuerto Tumbes', 'Custer', 250.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Minibus', 385.00),
+// ('Los Órganos', 'Aeropuerto Tumbes', 'Omnibus', 480.00);

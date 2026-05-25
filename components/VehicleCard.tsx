@@ -62,7 +62,7 @@ export default function VehicleCard({ item, fecha, pasajerosCount, vueltaOrigen,
     }
     return baseUrl;
   }, [item, fecha, pasajerosCount, vueltaOrigen, vueltaDestino, fechaVuelta, vueltaClase, vueltaPasajeros]);
-  console.log(vueltaOrigen, vueltaDestino, fechaVuelta, vueltaClase, vueltaPasajeros)
+  //console.log(vueltaOrigen, vueltaDestino, fechaVuelta, vueltaClase, vueltaPasajeros)
   return (
     <div className="bg-white p-5 rounded-sm flex flex-col md:flex-row items-center justify-between border border-gray-100 hover:shadow-xl transition-all group">
       <div className="flex items-center gap-6 w-full">

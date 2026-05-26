@@ -175,7 +175,7 @@ export default function VehiculosPage() {
                 </div>
                 
                 <Link 
-                    href={`/reservar?vehiculo=${encodeURIComponent(car.param)}`}
+                    href={`/reservar?vehiculo=${encodeURIComponent(car.param)}&pasajeros=${car.passengers}`}
                     className="bg-luxury-dark text-white px-8 py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-luxury-gold transition-colors flex items-center group"
                 >
                     Cotizar Viaje

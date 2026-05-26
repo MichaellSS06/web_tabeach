@@ -28,7 +28,6 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
   }, [fetchToursAndTarifas, fetchFlota]);
 
   // Captura de Parámetros de la URL
-  const vehiculoQuery = searchParams.get('vehiculo') || "Auto"
   const tourParam = searchParams.get('tour') || null
   const zonaHotelParam = searchParams.get('zonaHotel') || null
   // Trayecto - Ida
@@ -44,10 +43,6 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
   const pasajerosVueltaParam = Number(searchParams.get('pasajerosVuelta')) || null
   const fechaVueltaParam = searchParams.get('fechaVuelta') || null
 
-  const pasajerosParam = Number(searchParams.get('pasajeros')) || 1
-  const fechaParam = searchParams.get('fecha') || ""
-  const precioMovilidadParam = searchParams.get('precioMovilidad') || 0
-
   // const vehiculo = useMemo(() => {
   //   if (vehiculoQuery.toLowerCase().includes("custer")) return "Custer"
   //   if (vehiculoQuery.toLowerCase().includes("minibus")) return "Minibus"
@@ -61,7 +56,7 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
   const [origen, setOrigen] = useState(() => origenIdaParam || "")
   const [zonaHotel, setZonaHotel] = useState(zonaHotelParam || "")
   const [telefono, setTelefono] = useState("")
-  const [pasajeros, setPasajeros] = useState(pasajerosIdaParam || pasajerosParam)
+  const [pasajeros, setPasajeros] = useState(pasajerosIdaParam)
   const [fecha, setFecha] = useState(fechaIdaParam || "")
   const [hora, setHora] = useState("")
   const [loading, setLoading] = useState(false)

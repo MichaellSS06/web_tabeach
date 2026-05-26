@@ -1,5 +1,6 @@
 import RegisterPage from "@/components/RegisterPage"
 import { Metadata } from "next"
+import { Suspense } from "react"
 
 export const metadata: Metadata = {
   title: "Registrarse",
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 
 export default function Register() {
   return (
-    <RegisterPage />
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterPage />
+    </Suspense>
   )
 }

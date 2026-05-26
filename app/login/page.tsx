@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import LoginPage from "@/components/LoginPage"
+import { Suspense } from "react"
 
 export const metadata: Metadata = {
   title: "Iniciar Sesión",
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 
 export default function Login() {
   return (
-    <LoginPage />
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPage />
+    </Suspense>
   )
 }

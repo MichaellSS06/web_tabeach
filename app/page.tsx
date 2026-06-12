@@ -32,7 +32,7 @@ export default async function HomePage() {
         
         {/* Fila superior en celular (Logo y Botón alineados perfectamente en los extremos) */}
         <div className="w-full md:w-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
+          <Link href="/nosotros" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
             Tabeach <span className="text-luxury-gold">.</span>
           </Link>
           
@@ -45,8 +45,8 @@ export default async function HomePage() {
         {/* Enlaces de Navegación: Abajo en celular (centrados), en línea para computadora */}
         <div className="flex justify-center md:justify-start space-x-8 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
           <Link href="/destinos" className="hover:text-luxury-gold transition">Tours</Link>
-          <Link href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</Link>
-          <Link href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</Link>
+          {/* <Link href="/vehiculos" className="hover:text-luxury-gold transition">Vehículos</Link>
+          <Link href="/nosotros" className="hover:text-luxury-gold transition">Nosotros</Link> */}
         </div>
 
         {/* Botón original para Computadora (Oculto en celular para que no se duplique) */}
@@ -65,22 +65,22 @@ export default async function HomePage() {
       <section className="py-24 px-8 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div>
-            <h2 className="text-luxury-gold font-bold uppercase tracking-[0.3em] text-xs mb-3">Nuestra Flota</h2>
+            <h2 className="text-luxury-gold font-bold uppercase tracking-[0.3em] text-xs mb-3">Nuestros Tours</h2>
             <p className="text-4xl md:text-5xl font-serif italic text-luxury-dark">Elige tu experiencia</p>
           </div>
-          <Link href="/vehiculos" className="mt-6 md:mt-0 text-[11px] font-bold uppercase tracking-widest border-b-2 border-luxury-gold pb-1">
-            Ver todos los vehículos
+          <Link href="/destinos" className="mt-6 md:mt-0 text-[11px] font-bold uppercase tracking-widest border-b-2 border-luxury-gold pb-1">
+            Ver todos los tours
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="flex flex-wrap justify-center items-center gap-12 max-w-full">
           {[
-            { id: '01', name: 'Chofer Privado', desc: 'Servicio premium de punto a punto.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800' },
+            // { id: '01', name: 'Chofer Privado', desc: 'Servicio premium de punto a punto.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800' },
             { id: '02', name: 'Tours Guiados', desc: 'Conoce la historia local con expertos.', enlace: "/destinos", img: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800' },
-            { id: '03', name: 'Vans Ejecutivas', desc: 'Confort absoluto para grupos VIP.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800' }
+            // { id: '03', name: 'Vans Ejecutivas', desc: 'Confort absoluto para grupos VIP.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800' }
           ].map((item) => (
             <div key={item.id} className="group cursor-pointer">
-              <div className="relative overflow-hidden aspect-[3/4] mb-6 shadow-xl">
+              <div className="relative overflow-hidden w-xs aspect-[3/4] mb-6 shadow-xl">
                 <Image 
                   src={item.img} 
                   alt={`Servicio de ${item.name} - Tabeach`} 

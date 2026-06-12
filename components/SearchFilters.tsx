@@ -87,10 +87,10 @@ export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugere
         <MapPin className="text-luxury-gold mr-3" size={18} />
         <select 
           value={data.origen}
-          className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
+          className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           onChange={(e) => actualizarCampo('origen', e.target.value)} // 👈 Corregido
         >
-          <option value="" disabled>Seleccione Origen</option>
+          <option value="" disabled>¿Dónde le recogemos?</option>
           {origenesUnicos.map((orig) => (
             <option key={orig} value={orig}>{orig}</option>
           ))}
@@ -102,10 +102,10 @@ export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugere
         <MapPin className="text-luxury-gold mr-3" size={18} />
         <select 
           value={data.destino}
-          className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
+          className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           onChange={(e) => actualizarCampo('destino', e.target.value)}
         >
-          <option value="" disabled>Seleccione Destino</option>
+          <option value="" disabled>¿A dónde desea ir?</option>
           {destinosUnicos.map((dest) => (
             <option key={dest} value={dest}>{dest}</option>
           ))}
@@ -119,7 +119,7 @@ export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugere
           type="date" 
           min={hoyStr} // Restringe la selección a hoy o fechas futuras
           value={data.fecha}
-          className="bg-transparent outline-none w-full text-sm [color-scheme:light] cursor-pointer"
+          className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           onChange={(e) => actualizarCampo('fecha', e.target.value)}
         />
       </div>
@@ -129,7 +129,7 @@ export default function SearchFilters({ onSearch, onChange, esFormVuelta, sugere
         <Users className="text-luxury-gold mr-3" size={18} />
         <select 
           value={data.pasajeros}
-          className="bg-transparent outline-none w-full text-sm text-gray-700 cursor-pointer"
+          className="bg-transparent outline-none w-full text-sm font-medium text-luxury-dark cursor-pointer appearance-none"
           onChange={(e) => actualizarCampo('pasajeros', e.target.value === "" ? "" : Number(e.target.value))}
         >
           <option value="">Cualquier Capacidad</option>

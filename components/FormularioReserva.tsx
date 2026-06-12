@@ -12,12 +12,13 @@ import { useFlotaLocations } from '@/hooks/useFlotaLocations';
 import TrasladoCampos from './booking/TrasladoCampos';
 import TourCampos from './booking/TourCampos';
 
-export default function FormularioReserva({ nombre, email }: { nombre: string, email: string }) {
-  const searchParams = useSearchParams()
-  const supabase = createBrowserClient(
+const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+
+export default function FormularioReserva({ nombre, email }: { nombre: string, email: string }) {
+  const searchParams = useSearchParams()
 
   const { tours, fetchToursAndTarifas, fetchFlota } = useBookingStore();
   const { origenesUnicos, destinosUnicos } = useFlotaLocations();
@@ -150,7 +151,7 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
     }
     setLoading(true)
     setError("")
-    
+
     const datosCompra = {
       nombre: nombre,
       email: email,
@@ -164,6 +165,7 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
       tour: tourParam,
       zonaHotel: zonaHotel,
       numeroVuelo: numeroVuelo.trim() || null,
+      
       // Datos de retorno extendidos para la Edge Function
       vueltaActiva: vueltaActivaParam,
       origenVuelta: vueltaActivaParam ? origenVuelta : null,

@@ -25,6 +25,12 @@ const IMAGENES_TOURS: Record<string, string> = {
   "Tour Avistamiento de Ballenas": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073"
 };
 
+const DESCRIPCION_TOURS: Record<string, string> = {
+  "Tour de Manglares": "Esta experiencia se inicia en muelle de Puerto Pizarro, paradisiaco lugar donde los turistas abordan una lancha para hacer un recorrido por los canales del manglar observando aves del lugar y visitando el Zoo criadero de Cocodrilos. Incluye: Movilidad, Paseo en Lancha, Chaleco Salvavidas, Derecho de Muelle, Snack (chifles, dulce típico de la zona y fruta), Bebidas: Agua o Gaseosa, Entradas. Recomendaciones: Traer toalla, un cambio de ropa, bloqueador solar y repelente.",
+  "Tour de Pesca y Nado con Tortugas": "Esta excelente combinación de Tours se puede realizar durante todo el año, el mismo que se inicia en el Muelle de Los Órganos para abordar un Yate que los llevara a la ex Plataforma Petrolera donde podrán observar Lobos y Aves Marinas, asimismo después e ello se inicio a la pesca artesanal, experiencia que termina con la preparación de un exquisito ceviche abordo. Finalmente Llegamos al Muelle del Ñuro para disfrutar del mar y el nado con amigables Tortugas Marinas. Incluye: Traslado ida y vuelta desde los hoteles en Los Órganos / Máncora o Punta Sal, Chaleco Salvavidas, Recorrido en Deslizador de Fibra, Entradas, Snack (chifles, dulce típico de la zona y fruta), Bebidas: Agua o Gaseosa, Asistencia, Fotos y Videos. Recomendaciones: Traer toalla, un cambio de ropa y bloqueador solar.",
+  "Tour Nado Con Tortugas Marinas": "Encuentro con Tortugas Marinas amigables en su propio hábitat natural, que hacen contacto con los humanos; experiencia única que empieza en el muelle del Ñuro, donde los Turistas se dotan de un Chaleco salvavidas, e instrucciones básicas para el disfrute de esta aventura. Incluye: Movilidad, Chaleco Salvavidas, Snack (chifles, dulce típico de la zona y fruta), Bebidas: Agua o Gaseosa, Entradas, Asistencia, Fotos y Videos. Recomendaciones: Traer toalla, un cambio de ropa y bloqueador solar.",
+  "Tour Avistamiento de Ballenas": "Desde el 25 de Julio y durante los meses de agosto, setiembre y octubre es posible realizar el fantástico Tours de Avistamiento de Ballenas ya que estas emigran desde aguas antárticas a la costa norte del Perú para reproducirse y criar a sus ballenatos, además se pueden observar, el Delfín común, Lobos Marinos, Tortugas y Aves, lo cual dependerá de la favorable naturaleza. Duración 3:30 horas aproximadamente. Incluye: Traslado ida y vuelta desde los hoteles en Los Órganos / Máncora o Punta Sal, Chaleco Salvavidas, Recorrido en Deslizador de Fibra, Entradas, Snack (chifles, dulce típico de la zona y fruta), Bebidas: Agua o Gaseosa, Asistencia, Fotos y Videos, Recomendaciones: Traer toalla, un cambio de ropa y bloqueador solar."};
+
 export default function TourCard({ tour, numPasajeros, zonaHotel, onPasajerosChange, onZonaChange }: TourCardProps) {
   
   // 💥 ¡AHORA SÍ! El hook se llama de manera legal en el nivel superior del componente
@@ -41,6 +47,7 @@ export default function TourCard({ tour, numPasajeros, zonaHotel, onPasajerosCha
   });
 
   const imgUrl = IMAGENES_TOURS[tour.nombre] || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073";
+  const descripcion = DESCRIPCION_TOURS[tour.nombre] || "NA"
   const hrefReserva = `/reservar?tour=${encodeURIComponent(tour.nombre)}&vehiculo=${vehiculoAsignado}&zonaHotel=${encodeURIComponent(zonaHotel)}&pasajeros=${numPasajeros}&precio_movilidad=${precioMovilidad}`;
   const esValidoParaReserva = zonaHotel && (precioMovilidad > 0 || (precioMovilidad === 0 && zonaHotel !== ""));
 
@@ -65,8 +72,8 @@ export default function TourCard({ tour, numPasajeros, zonaHotel, onPasajerosCha
         <div>
           <span className="text-[9px] font-bold text-luxury-gold tracking-widest uppercase block mb-2">Experiencia Tabeach</span>
           <h3 className="text-xl font-serif italic text-luxury-dark mb-4">{tour.nombre}</h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-light mb-6 min-h-[64px] lg:line-clamp-3">
-            {"Disfrute de un itinerario personalizado con atención al detalle y chofer privado a su completa disposición."}
+          <p className="text-xs text-gray-500 leading-relaxed font-light mb-6 min-h-[64px] lg:line-clamp-15">
+            {descripcion}
           </p>
         </div>
         

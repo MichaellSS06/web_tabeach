@@ -138,7 +138,7 @@ export default function PoliticaDevolucionesPage() {
             </div>
             <div className="space-y-3">
               <p>
-                <strong>4.1. Canal de Procesamiento:</strong> Las solicitudes aprobadas para reembolsos deben tramitarse obligatoriamente escribiendo a <span className="text-luxury-dark font-medium">taxibeach@hotmail.com</span> adjuntando el voucher de servicio emitido y la titularidad de la cuenta bancaria.
+                <strong>4.1. Canal de Procesamiento:</strong> Las solicitudes aprobadas para reembolsos deben tramitarse obligatoriamente escribiendo a <span className="text-luxury-dark font-medium">reservastaxibeach@hotmail.com</span> adjuntando el voucher de servicio emitido y la titularidad de la cuenta bancaria.
               </p>
               <p>
                 <strong>4.2. Plazos de Retorno:</strong> Los reembolsos autorizados se ejecutan en un plazo máximo de <strong>03 a 05 días hábiles</strong> mediante transferencia directa a la cuenta de origen (o devolución bancaria correspondiente).

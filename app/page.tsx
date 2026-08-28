@@ -289,7 +289,7 @@ export default async function HomePage() {
               className="flex items-center justify-between border-b border-gray-800 pb-2 group hover:border-luxury-gold transition-colors"
             >
               <span className="text-xs text-gray-400 group-hover:text-white transition-colors font-light">
-                taxibeach@hotmail.com
+                reservastaxibeach@hotmail.com
               </span>
               <Mail size={14} className="text-luxury-gold group-hover:translate-x-1 transition-transform" />
             </a>
@@ -317,6 +317,12 @@ export default async function HomePage() {
             </Link>
             <Link href="/terminos-condiciones" className="hover:text-luxury-gold transition-colors font-normal text-luxury-gold">
               Términos y Condiciones
+            </Link>
+            <Link href="/devoluciones" className="hover:text-luxury-gold transition-colors font-normal text-luxury-gold">
+              Política de cambios y devoluciones
+            </Link>
+            <Link href="/reclamaciones" className="hover:text-luxury-gold transition-colors font-normal text-luxury-gold">
+              Libro de reclamaciones
             </Link>
           </div>
 

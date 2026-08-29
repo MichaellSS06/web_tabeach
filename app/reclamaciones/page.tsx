@@ -75,10 +75,6 @@ export default function LibroReclamacionesPage() {
           <h1 className="text-3xl md:text-5xl font-serif italic">
             Libro de Reclamaciones Virtual
           </h1>
-          <p className="text-xs text-gray-500 max-w-lg mx-auto font-light leading-relaxed">
-            <strong>TAXI BEACH TRAVEL S.A.C.</strong> | RUC: 20601831415<br />
-            Dirección Legal: Av. Panamericana Norte Km 1208, Tumbes, Perú
-          </p>
           <div className="w-12 h-[1px] bg-luxury-gold mx-auto mt-4" />
         </header>
 
@@ -94,11 +90,8 @@ export default function LibroReclamacionesPage() {
                 Hoja de Reclamación Registrada
               </h2>
               <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed font-light">
-                Su reclamo/queja ha sido enviado con éxito a nuestro departamento de atención. Se ha enviado una copia digital en formato PDF a su correo electrónico.
+                Su reclamo/queja ha sido enviado con éxito a nuestro departamento de atención.
               </p>
-              <div className="bg-luxury-cream/50 p-4 rounded-sm border border-luxury-gold/20 inline-block text-xs text-luxury-dark font-medium">
-                N° de Hoja de Reclamación: <span className="text-luxury-gold">LR-2026-0084</span>
-              </div>
               <p className="text-[11px] text-gray-400 block pt-2">
                 Plazo de respuesta legal conforme a norma: Máximo 15 días hábiles.
               </p>
@@ -246,22 +239,11 @@ export default function LibroReclamacionesPage() {
                         />
                         <span>Servicio</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="tipoBien" 
-                          value="producto" 
-                          checked={formData.tipoBien === 'producto'}
-                          onChange={() => setFormData({...formData, tipoBien: 'producto'})}
-                          className="accent-luxury-gold"
-                        />
-                        <span>Producto</span>
-                      </label>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block mb-1 font-medium text-gray-700">Monto Reclamado (S/.) *</label>
+                    <label className="block mb-1 font-medium text-gray-700">Monto Reclamado ($.) *</label>
                     <input 
                       type="number" 
                       step="0.01"

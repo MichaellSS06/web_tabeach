@@ -32,10 +32,18 @@ export default async function HomePage() {
         
         {/* Fila superior en celular (Logo y Botón alineados perfectamente en los extremos) */}
         <div className="w-full md:w-auto flex justify-between items-center">
-          <Link href="/nosotros" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase">
+          <div className="md:w-auto">
+          <Link href="/nosotros" className="text-2xl font-bold tracking-tighter text-luxury-dark uppercase inline-flex gap-2">
+            <Image
+                    src="/logotabeach2.png"
+                    alt={`Logo de Tabeach`}
+                    width={60}
+                    height={60} 
+                    className="object-contain filter opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+            />
             Tabeach <span className="text-luxury-gold">.</span>
           </Link>
-          
+          </div>
           {/* Este contenedor solo empuja el botón en móvil, en PC se integra al flujo */}
           <div className="md:hidden">
             <ReservarButton />
@@ -126,55 +134,55 @@ export default async function HomePage() {
               { 
                 name: "CTM Tours", 
                 ref: "CTM TOURS S.A.C.",
-                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80" // Abstracción Minimalista Oro/Gris
+                img: "/ctmtours.png" // Abstracción Minimalista Oro/Gris
               },
               { 
                 name: "Viajes Pacífico", 
                 ref: "VIAJES PACÍFICO S.A.C.",
-                img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=400&q=80" // Ondas suaves y elegantes
+                img: "/viajespacifico.jpg" // Ondas suaves y elegantes
               },
               { 
                 name: "Nuevo Mundo", 
                 ref: "NUEVO MUNDO VIAJES",
-                img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80" // Monograma geométrico moderno
+                img: "/nmviajes.png" // Monograma geométrico moderno
               },
               { 
                 name: "Atipax Perú", 
                 ref: "ATIPAX PERÚ TOUR OPERADOR",
-                img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=400&q=80" // Formas fluidas corporativas
+                img: "/atipaxgroup.png" // Formas fluidas corporativas
               },
               { 
                 name: "Peak DMC", 
                 ref: "PEAK DMC SOUTH AMERICA",
-                img: "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=400&q=80" // Arte vectorial minimalista fino
+                img: "/peak.jpg" // Arte vectorial minimalista fino
               },
               { 
                 name: "Viajes Falabella", 
                 ref: "VIAJES FALABELLA",
-                img: "https://images.unsplash.com/photo-1604871000636-074fa5117945?w=400&q=80" // Textura sutil con tintes dorados
+                img: "/viajesfalabella.png" // Textura sutil con tintes dorados
               },
               { 
                 name: "Gastón Sacaze", 
                 ref: "GASTÓN SACAZE",
-                img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=400&q=80" // Degradado premium limpio
+                img: "/gaston.png" // Degradado premium limpio
               },
               { 
                 name: "Traveleando", 
                 ref: "TRAVELEANDO",
-                img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=400&q=80" // Logotipo abstracto conceptual
+                img: "/traveleando.jpg" // Logotipo abstracto conceptual
               },
             ].map((cliente, idx) => (
               <div 
                 key={idx} 
-                className="group relative flex flex-col items-center justify-center bg-luxury-cream/20 border border-gray-100/70 p-6 h-36 rounded-sm cursor-pointer transition-all duration-500 hover:bg-white hover:shadow-xl hover:border-transparent overflow-hidden"
+                className="group relative flex flex-col items-center justify-center bg-luxury-cream/20 border border-gray-100/70 p-2 h-50 rounded-sm cursor-pointer transition-all duration-500 hover:bg-white hover:shadow-xl hover:border-transparent overflow-hidden"
               >
                 {/* Contenedor del Logo (Imagen con Efecto Zoom en Hover) */}
-                <div className="relative w-full h-16 mb-2 overflow-hidden transition-transform duration-700 group-hover:scale-110">
+                <div className="relative w-full h-40 mb-2 overflow-hidden transition-transform duration-700 group-hover:scale-110">
                   <Image
                     src={cliente.img}
                     alt={`Logo de ${cliente.name}`}
                     fill
-                    className="object-contain filter grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                    className="object-contain filter opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
                     sizes="(max-w-7xl) 25vw"
                   />
                 </div>

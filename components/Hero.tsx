@@ -95,7 +95,7 @@ export default function HeroSection({ initialFlota }: HeroProps) {
       {/* Fondo de Imagen */}
       <div className="absolute inset-0 z-0">
         <Image 
-          src="https://images.unsplash.com/photo-1517154421773-0529f29ea451?q=80&w=2070" 
+          src="/tumbes.jpg" 
           alt="Transporte Turístico de Lujo Tabeach" 
           fill
           priority

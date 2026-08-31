@@ -21,12 +21,12 @@ interface VehicleCardProps {
 }
 
 const IMAGENES_POR_CLASE: Record<string, string> = {
-  "Auto": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-  "Avanza": "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
-  "Van": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-  "Sprinter": "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
-  "Minibus": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070",
-  "Omnibus": "https://images.unsplash.com/photo-1536700503339-1e4b06520771?q=80&w=2070",
+  "Auto": "/auto.png",
+  "Avanza": "/avanza.jpg",
+  "Van": "/van.png",
+  "Sprinter": "/sprinter.png",
+  "Minibus": "/minibus.png",
+  "Omnibus": "/omnibus.png",
 };
 
 const NOMBRES_COMERCIALES: Record<string, string> = {

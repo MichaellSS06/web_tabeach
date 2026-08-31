@@ -19,10 +19,10 @@ interface TourCardProps {
 }
 
 const IMAGENES_TOURS: Record<string, string> = {
-  "Tour de Manglares": "https://images.unsplash.com/photo-1544984243-ec57ea16fe25?q=80&w=2070",
-  "Tour de Pesca y Nado con Tortugas": "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=2070",
-  "Tour Nado Con Tortugas Marinas": "https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=80&w=2075",
-  "Tour Avistamiento de Ballenas": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073"
+  "Tour de Manglares": "/tourmanglares.png",
+  "Tour de Pesca y Nado con Tortugas": "/tourpesca.png",
+  "Tour Nado Con Tortugas Marinas": "/tourtortugas.png",
+  "Tour Avistamiento de Ballenas": "/tourballenas.png"
 };
 
 const DESCRIPCION_TOURS: Record<string, string> = {

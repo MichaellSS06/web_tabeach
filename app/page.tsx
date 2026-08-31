@@ -84,14 +84,14 @@ export default async function HomePage() {
         <div className="flex flex-wrap justify-center items-center gap-12 max-w-full">
           {[
             // { id: '01', name: 'Chofer Privado', desc: 'Servicio premium de punto a punto.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800' },
-            { id: '02', name: 'Tours Guiados', desc: 'Disfruta con muchas actividades y conoce la historia que guarda nuestras ciudades.', enlace: "/destinos", img: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800' },
+            { id: '01', name: 'Tours Guiados', desc: 'Disfruta con muchas actividades y conoce la historia que guarda nuestras ciudades.', enlace: "/destinos", img: '/tourmanglares.png' },
             // { id: '03', name: 'Vans Ejecutivas', desc: 'Confort absoluto para grupos VIP.', enlace: "/vehiculos", img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800' }
           ].map((item) => (
             <div key={item.id} className="group cursor-pointer">
-              <div className="relative overflow-hidden w-xs aspect-[3/4] mb-6 shadow-xl">
+              <div className="relative overflow-hidden w-full aspect-[4/3] mb-6 shadow-xl">
                 <Image 
                   src={item.img} 
-                  alt={`Servicio de ${item.name} - Tabeach`} 
+                  alt={`Servicio de ${item.name} - Tabeach`}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110" 
                 />

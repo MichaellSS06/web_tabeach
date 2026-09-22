@@ -132,72 +132,72 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
   }, [tourParam, pricingTour, pricingVehiculo, vehiculoClaseIda]);
 
   const handlePago = async () => {
-    // Validación dinámica de campos requeridos
-    if (!tourParam && (!origen || !destino)) {
-      setError("Por favor, ingrese el origen y destino de su traslado.")
-      return
-    }
-    if (tourParam && !zonaHotel.trim()) {
-      setError("Por favor, especifique su zona de hoteles o lugar de pick-up.");
-      return
-    }
-    if (!telefono.trim()) {
-      setError("Por favor, ingrese un número de teléfono de contacto.");
-      return
-    }
-    if (!fecha || !hora) {
-      setError("Por favor, seleccione la fecha y hora para su servicio.")
-      return
-    }
-    setLoading(true)
-    setError("")
+    // // Validación dinámica de campos requeridos
+    // if (!tourParam && (!origen || !destino)) {
+    //   setError("Por favor, ingrese el origen y destino de su traslado.")
+    //   return
+    // }
+    // if (tourParam && !zonaHotel.trim()) {
+    //   setError("Por favor, especifique su zona de hoteles o lugar de pick-up.");
+    //   return
+    // }
+    // if (!telefono.trim()) {
+    //   setError("Por favor, ingrese un número de teléfono de contacto.");
+    //   return
+    // }
+    // if (!fecha || !hora) {
+    //   setError("Por favor, seleccione la fecha y hora para su servicio.")
+    //   return
+    // }
+    // setLoading(true)
+    // setError("")
 
-    const datosCompra = {
-      nombre: nombre,
-      email: email,
-      phone: `${codigoPais}${telefono.trim()}`,
-      pasajeros: pasajeros,
-      vehiculo: vehiculoFinal,
-      origen: tourParam ? null : origen,     
-      destino: tourParam ? null : destino,  
-      fecha: fecha,
-      hora: `${hora}:00`, 
-      tour: tourParam,
-      zonaHotel: zonaHotel,
-      numeroVuelo: numeroVuelo.trim() || null,
+    // const datosCompra = {
+    //   nombre: nombre,
+    //   email: email,
+    //   phone: `${codigoPais}${telefono.trim()}`,
+    //   pasajeros: pasajeros,
+    //   vehiculo: vehiculoFinal,
+    //   origen: tourParam ? null : origen,     
+    //   destino: tourParam ? null : destino,  
+    //   fecha: fecha,
+    //   hora: `${hora}:00`, 
+    //   tour: tourParam,
+    //   zonaHotel: zonaHotel,
+    //   numeroVuelo: numeroVuelo.trim() || null,
       
-      // Datos de retorno extendidos para la Edge Function
-      vueltaActiva: vueltaActivaParam,
-      origenVuelta: vueltaActivaParam ? origenVuelta : null,
-      destinoVuelta: vueltaActivaParam ? destinoVuelta : null,
-      pasajerosVuelta: vueltaActivaParam ? pasajerosVuelta : null,
-      fechaVuelta: vueltaActivaParam ? fechaVuelta : null,
-      horaVuelta: vueltaActivaParam ? `${horaVuelta}:00` : null,
-      numeroVueloVuelta: (vueltaActivaParam && numeroVueloVuelta.trim()) ? numeroVueloVuelta.trim() : null
-    }
+    //   // Datos de retorno extendidos para la Edge Function
+    //   vueltaActiva: vueltaActivaParam,
+    //   origenVuelta: vueltaActivaParam ? origenVuelta : null,
+    //   destinoVuelta: vueltaActivaParam ? destinoVuelta : null,
+    //   pasajerosVuelta: vueltaActivaParam ? pasajerosVuelta : null,
+    //   fechaVuelta: vueltaActivaParam ? fechaVuelta : null,
+    //   horaVuelta: vueltaActivaParam ? `${horaVuelta}:00` : null,
+    //   numeroVueloVuelta: (vueltaActivaParam && numeroVueloVuelta.trim()) ? numeroVueloVuelta.trim() : null
+    // }
 
-    try {
-      // 2. REEMPLAZO DEL FETCH POR EL METODO NATIVO
-      const { data, error: invokeError } = await supabase.functions.invoke('openpay-checkout', {
-        body: datosCompra // No necesita JSON.stringify, se pasa el objeto directo
-      })
+    // try {
+    //   // 2. REEMPLAZO DEL FETCH POR EL METODO NATIVO
+    //   const { data, error: invokeError } = await supabase.functions.invoke('openpay-checkout', {
+    //     body: datosCompra // No necesita JSON.stringify, se pasa el objeto directo
+    //   })
 
-      // El cliente de Supabase maneja los errores de red o de función en el objeto error
-      if (invokeError) {
-        throw new Error(invokeError.message || 'Error al invocar la función de pago.')
-      }
+    //   // El cliente de Supabase maneja los errores de red o de función en el objeto error
+    //   if (invokeError) {
+    //     throw new Error(invokeError.message || 'Error al invocar la función de pago.')
+    //   }
 
-      // 3. REDIRECCIÓN A OPENPAY CON LA DATA EN LÍMPIA
-      if (data && data.checkout_url) {
-        window.location.href = data.checkout_url
-      } else {
-        throw new Error('No se recibió la URL de la pasarela de pagos.')
-      }
+    //   // 3. REDIRECCIÓN A OPENPAY CON LA DATA EN LÍMPIA
+    //   if (data && data.checkout_url) {
+    //     window.location.href = data.checkout_url
+    //   } else {
+    //     throw new Error('No se recibió la URL de la pasarela de pagos.')
+    //   }
 
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Error de conexión con el servidor.')
-      setLoading(false)
-    }
+    // } catch (err: unknown) {
+    //   setError((err as Error).message || 'Error de conexión con el servidor.')
+    //   setLoading(false)
+    // }
   }
 
   // 4. Obtener la fecha de hoy en formato YYYY-MM-DD para bloquear el pasado

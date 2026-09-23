@@ -30,12 +30,12 @@ const IMAGENES_POR_CLASE: Record<string, string> = {
 };
 
 const NOMBRES_COMERCIALES: Record<string, string> = {
-  "Auto": "Mercedes-Benz S-Class",
-  "Avanza": "Toyota Avanza Premium",
-  "Van": "Toyota Hiace VIP",
-  "Sprinter": "Mercedes-Benz Sprinter",
-  "Minibus": "Executive Minibus",
-  "Omnibus": "Luxury Coach Bus"
+  "Auto": "Auto",
+  "Avanza": "Avanza",
+  "Van": "Van",
+  "Sprinter": "Sprinter",
+  "Minibus": "Minibus",
+  "Omnibus": "Bus"
 };
 
 export default function VehicleCard({ item, fecha, pasajerosCount, vueltaOrigen, vueltaDestino, fechaVuelta, vueltaClase, vueltaPasajeros }: VehicleCardProps) {

@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.culqi.com https://3ds.culqi.com https://js.culqi.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.culqi.com https://checkout.culqi.com https://3ds.culqi.com https://js.culqi.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' blob: data: https://images.unsplash.com https://iuryxfvxtgpwxpwnkgrk.supabase.co https://checkout.culqi.com;
-    connect-src 'self' https://iuryxfvxtgpwxpwnkgrk.supabase.co https://api.culqi.com https://checkout.culqi.com;
-    frame-src 'self' https://checkout.culqi.com https://3ds.culqi.com;
+    img-src 'self' blob: data: https://images.unsplash.com https://iuryxfvxtgpwxpwnkgrk.supabase.co https://*.culqi.com;
+    connect-src 'self' https://iuryxfvxtgpwxpwnkgrk.supabase.co https://*.culqi.com https://api.culqi.com https://checkout.culqi.com;
+    frame-src 'self' https://*.culqi.com https://checkoutview.culqi.com https://checkout.culqi.com https://3ds.culqi.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';

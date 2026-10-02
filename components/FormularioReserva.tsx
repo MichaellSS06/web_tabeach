@@ -12,6 +12,39 @@ import { useFlotaLocations } from '@/hooks/useFlotaLocations';
 import TrasladoCampos from './booking/TrasladoCampos';
 import TourCampos from './booking/TourCampos';
 
+interface CulqiSDK {
+  publicKey: string | undefined;
+  settings: (config: {
+    title: string;
+    currency: string;
+    amount: number;
+  }) => void;
+  options: (config: {
+    lang?: string;
+    installments?: boolean;
+    [key: string]: unknown;
+  }) => void;
+  open: () => void;
+  close: () => void;
+  token?: {
+    id: string;
+    email: string;
+    [key: string]: unknown;
+  };
+  error?: {
+    user_message?: string;
+    merchant_message?: string;
+    [key: string]: unknown;
+  };
+}
+
+declare global {
+  interface Window {
+    Culqi: CulqiSDK;
+    culqi: () => void;
+  }
+}
+
 const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -132,72 +165,127 @@ export default function FormularioReserva({ nombre, email }: { nombre: string, e
   }, [tourParam, pricingTour, pricingVehiculo, vehiculoClaseIda]);
 
   const handlePago = async () => {
-    // // Validación dinámica de campos requeridos
-    // if (!tourParam && (!origen || !destino)) {
-    //   setError("Por favor, ingrese el origen y destino de su traslado.")
-    //   return
-    // }
-    // if (tourParam && !zonaHotel.trim()) {
-    //   setError("Por favor, especifique su zona de hoteles o lugar de pick-up.");
-    //   return
-    // }
-    // if (!telefono.trim()) {
-    //   setError("Por favor, ingrese un número de teléfono de contacto.");
-    //   return
-    // }
-    // if (!fecha || !hora) {
-    //   setError("Por favor, seleccione la fecha y hora para su servicio.")
-    //   return
-    // }
-    // setLoading(true)
-    // setError("")
+    // 1. Validación dinámica de campos requeridos
+    if (!tourParam && (!origen || !destino)) {
+      setError("Por favor, ingrese el origen y destino de su traslado.")
+      return
+    }
+    if (tourParam && !zonaHotel.trim()) {
+      setError("Por favor, especifique su zona de hoteles o lugar de pick-up.");
+      return
+    }
+    if (!telefono.trim()) {
+      setError("Por favor, ingrese un número de teléfono de contacto.");
+      return
+    }
+    if (!fecha || !hora) {
+      setError("Por favor, seleccione la fecha y hora para su servicio.")
+      return
+    }
+    setLoading(true)
+    setError("")
 
-    // const datosCompra = {
-    //   nombre: nombre,
-    //   email: email,
-    //   phone: `${codigoPais}${telefono.trim()}`,
-    //   pasajeros: pasajeros,
-    //   vehiculo: vehiculoFinal,
-    //   origen: tourParam ? null : origen,     
-    //   destino: tourParam ? null : destino,  
-    //   fecha: fecha,
-    //   hora: `${hora}:00`, 
-    //   tour: tourParam,
-    //   zonaHotel: zonaHotel,
-    //   numeroVuelo: numeroVuelo.trim() || null,
+    const datosCompra = {
+      nombre: nombre,
+      email: email,
+      phone: `${codigoPais}${telefono.trim()}`,
+      pasajeros: pasajeros,
+      vehiculo: vehiculoFinal,
+      origen: tourParam ? null : origen,     
+      destino: tourParam ? null : destino,  
+      fecha: fecha,
+      hora: `${hora}:00`, 
+      tour: tourParam,
+      zonaHotel: zonaHotel,
+      numeroVuelo: numeroVuelo.trim() || null,
       
-    //   // Datos de retorno extendidos para la Edge Function
-    //   vueltaActiva: vueltaActivaParam,
-    //   origenVuelta: vueltaActivaParam ? origenVuelta : null,
-    //   destinoVuelta: vueltaActivaParam ? destinoVuelta : null,
-    //   pasajerosVuelta: vueltaActivaParam ? pasajerosVuelta : null,
-    //   fechaVuelta: vueltaActivaParam ? fechaVuelta : null,
-    //   horaVuelta: vueltaActivaParam ? `${horaVuelta}:00` : null,
-    //   numeroVueloVuelta: (vueltaActivaParam && numeroVueloVuelta.trim()) ? numeroVueloVuelta.trim() : null
-    // }
+      // Datos de retorno extendidos
+      vueltaActiva: vueltaActivaParam,
+      origenVuelta: vueltaActivaParam ? origenVuelta : null,
+      destinoVuelta: vueltaActivaParam ? destinoVuelta : null,
+      pasajerosVuelta: vueltaActivaParam ? pasajerosVuelta : null,
+      fechaVuelta: vueltaActivaParam ? fechaVuelta : null,
+      horaVuelta: vueltaActivaParam ? `${horaVuelta}:00` : null,
+      numeroVueloVuelta: (vueltaActivaParam && numeroVueloVuelta.trim()) ? numeroVueloVuelta.trim() : null
+    }
 
-    // try {
-    //   // 2. REEMPLAZO DEL FETCH POR EL METODO NATIVO
-    //   const { data, error: invokeError } = await supabase.functions.invoke('openpay-checkout', {
-    //     body: datosCompra // No necesita JSON.stringify, se pasa el objeto directo
-    //   })
+    try {
+      // 2. Invocar la Edge Function para validar precios y crear la reserva en estado pendiente
+      const { data, error: invokeError } = await supabase.functions.invoke('culqi-checkout', {
+        body: datosCompra
+      })
 
-    //   // El cliente de Supabase maneja los errores de red o de función en el objeto error
-    //   if (invokeError) {
-    //     throw new Error(invokeError.message || 'Error al invocar la función de pago.')
-    //   }
+      if (invokeError || !data?.reserva_id) {
+        throw new Error(invokeError?.message || 'Error al validar las tarifas de la reserva.')
+      }
 
-    //   // 3. REDIRECCIÓN A OPENPAY CON LA DATA EN LÍMPIA
-    //   if (data && data.checkout_url) {
-    //     window.location.href = data.checkout_url
-    //   } else {
-    //     throw new Error('No se recibió la URL de la pasarela de pagos.')
-    //   }
+      const { reserva_id, monto_centimos } = data
 
-    // } catch (err: unknown) {
-    //   setError((err as Error).message || 'Error de conexión con el servidor.')
-    //   setLoading(false)
-    // }
+      // 3. Configurar y Abrir el Modal Checkout de Culqi
+      if (typeof window !== 'undefined' && window.Culqi) {
+        window.Culqi.publicKey = process.env.NEXT_PUBLIC_CULQI_PUBLIC_KEY; // pk_test_... o pk_live_...
+        
+        window.Culqi.settings({
+          title: 'Tabeach Transportes',
+          currency: 'PEN',
+          amount: monto_centimos // El monto debe ir en céntimos
+        });
+
+        window.Culqi.options({
+          lang: 'auto',
+          installments: false,
+          paymentMethods: {
+            tarjeta: true,
+            yape: true,
+            billetera: true,
+            pagoefectivo: true,
+            cuotealo: true
+          }
+        });
+
+        // Callback global invocado por el script de Culqi cuando el cliente presiona "Pagar"
+        window.culqi = async () => {
+          if (window.Culqi.token) {
+            const tokenId = window.Culqi.token.id;
+            const emailIngresadoEnModal = window.Culqi.token.email;
+            window.Culqi.close(); // Cerramos el modal de pago
+            console.log(tokenId)
+            // 4. Invocar la Edge Function nuevamente para ejecutar el cargo directo con Culqi
+            const { data: chargeData, error: chargeError } = await supabase.functions.invoke('culqi-checkout', {
+              body: {
+                action: 'procesar_pago',
+                token_id: tokenId,
+                reserva_id: reserva_id,
+                email: emailIngresadoEnModal || email
+              }
+            })
+
+            if (chargeError || !chargeData?.success) {
+              setError(chargeError?.message || 'Error procesando el cobro en Culqi.')
+              setLoading(false)
+              return
+            }
+            console.log(chargeData.charge_id)
+            // REDIRECCIÓN A PÁGINA DE ÉXITO
+            window.location.href = `/reservar/exito?order=${reserva_id}`
+
+          } else if (window.Culqi.error) {
+            setError(window.Culqi.error.user_message || 'No se pudo generar el token de la tarjeta.')
+            setLoading(false)
+          }
+        };
+
+        // Abrimos el Pop-up
+        window.Culqi.open();
+
+      } else {
+        throw new Error("El componente de pago de Culqi no está cargado correctamente.")
+      }
+
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Error de conexión con el servidor.')
+      setLoading(false)
+    }
   }
 
   // 4. Obtener la fecha de hoy en formato YYYY-MM-DD para bloquear el pasado

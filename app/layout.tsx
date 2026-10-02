@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-
+import Script from "next/script";
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
 //   subsets: ["latin"],
@@ -78,6 +78,11 @@ export default function RootLayout({
       lang="es"
     >
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
+        {/* 2. SCRIPT OFICIAL DE CULQI V4 */}
+        <Script 
+          src="https://checkout.culqi.com/js/v4" 
+          strategy="afterInteractive" 
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
